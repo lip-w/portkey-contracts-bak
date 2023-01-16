@@ -1,0 +1,463 @@
+/**
+ * CA contract.
+ */
+syntax = "proto3";
+
+package ca;
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Portkey.Contracts.CA";
+
+service CAContract {
+  option (aelf.csharp_state) = "Portkey.Contracts.CA.CAContractState";
+
+  rpc Initialize(InitializeInput) returns (google.protobuf.Empty){}
+
+  // If the GuardianAccount has CAHolder and Manager Address, meaning CAHolder created before, return true
+  rpc CreateCAHolder (CreateCAHolderInput) returns (google.protobuf.Empty) {}
+
+  // If Guardian is already added, return ture
+  rpc AddGuardian (AddGuardianInput) returns (google.protobuf.Empty) {}
+
+  // If Guardian is already removed, return ture
+  rpc RemoveGuardian (RemoveGuardianInput) returns (google.protobuf.Empty) {}
+
+  rpc UpdateGuardian (UpdateGuardianInput) returns (google.protobuf.Empty) {}
+
+  // If GuardianAccount is already setted, return true
+  rpc SetGuardianAccountForLogin (SetGuardianAccountForLoginInput) returns (google.protobuf.Empty) {}
+
+  // If GuardianAccount is already unsetted, return true
+  rpc UnsetGuardianAccountForLogin (UnsetGuardianAccountForLoginInput) returns (google.protobuf.Empty) {}
+
+  //Manager call other contracts.
+  rpc ManagerForwardCall (ManagerForwardCallInput) returns (google.protobuf.Empty) {}
+
+  //Manager send transfer transaction.
+  rpc ManagerTransfer (ManagerTransferInput) returns (google.protobuf.Empty){}
+
+  //Manager send transfer from transaction.
+  rpc ManagerTransferFrom (ManagerTransferFromInput) returns (google.protobuf.Empty){}
+
+  // If Manager is already binded, return true
+  rpc SocialRecovery (SocialRecoveryInput) returns (google.protobuf.Empty) {}
+
+  // If the manager is already exists, return true
+  rpc AddManager (AddManagerInput) returns (google.protobuf.Empty) {}
+
+  // If the manager is already removed, return true
+  rpc RemoveManager (RemoveManagerInput) returns (google.protobuf.Empty) {}
+
+  // If End Points already exists, return true
+  rpc AddVerifierServerEndPoints (AddVerifierServerEndPointsInput) returns (google.protobuf.Empty) {}
+
+  // If End Points does not exists, return true
+  rpc RemoveVerifierServerEndPoints (RemoveVerifierServerEndPointsInput) returns (google.protobuf.Empty) {}
+
+  // if Verifier Server does not exists, return true
+  rpc RemoveVerifierServer (RemoveVerifierServerInput) returns (google.protobuf.Empty) {}
+
+  rpc AddCAServer (AddCAServerInput) returns (google.protobuf.Empty){}
+
+  rpc RemoveCAServer (RemoveCAServerInput) returns (google.protobuf.Empty){}
+
+  rpc GetHolderInfo(GetHolderInfoInput) returns (GetHolderInfoOutput) {option (aelf.is_view) = true;}
+
+  rpc GetVerifierServers (google.protobuf.Empty) returns (GetVerifierServersOutput) {option (aelf.is_view) = true;}
+
+  rpc GetCAServers (google.protobuf.Empty) returns (GetCAServersOutput) {option (aelf.is_view) = true;}
+
+  // Validates CAHolder with Managers
+  rpc ValidateCAHolderInfoWithManagersExists(ValidateCAHolderInfoWithManagersExistsInput) returns (google.protobuf.Empty) {}
+
+  rpc SyncHolderInfo (SyncHolderInfoInput) returns (google.protobuf.Empty) {}
+
+  rpc ValidateStrategy (ValidateStrategyInput) returns (ValidateStrategyOutput) {option (aelf.is_view) = true;}
+}
+
+//Data structure
+message HolderInfo {
+  aelf.Address creator_address = 1;
+  repeated Manager managers = 2;
+  GuardiansInfo guardians_info = 3;
+  StrategyNode judgement_strategy = 4;
+}
+
+message Manager {
+  aelf.Address manager_address = 1;
+  string device_string = 2;
+}
+
+message GuardiansInfo {
+  repeated GuardianAccount guardian_accounts = 1;
+  repeated int32 login_guardian_account_indexes = 2;
+}
+
+message GuardianAccount {
+  Guardian guardian = 1;
+  string value = 2;
+}
+
+message Guardian {
+  GuardianType type = 1;
+  Verifier verifier = 2;
+}
+
+enum GuardianType {
+  GUARDIAN_TYPE_OF_EMAIL = 0;
+  GUARDIAN_TYPE_OF_PHONE = 1;
+}
+
+message Verifier {
+  aelf.Hash id = 1;
+}
+
+message VerifierServer {
+  aelf.Hash id = 1;
+  string name123 = 2;
+  string image_url = 3;
+  repeated string end_points = 4;
+  repeated aelf.Address verifier_address = 5;
+}
+
+message CAServer {
+  string name = 1;
+  string end_point = 2;
+}
+
+message VerifierServerList {
+  repeated VerifierServer verifier_servers = 1;
+}
+
+message CAServerList {
+  repeated CAServer ca_servers = 1;
+}
+
+//Input
+message InitializeInput{
+  aelf.Address contract_admin = 1;
+}
+
+message CreateCAHolderInput {
+  GuardianAccountInfo guardian_approved = 1;
+  Manager manager = 2;
+  StrategyNode judgement_strategy = 3;
+}
+
+message GuardianAccountInfo {
+  string value = 1;
+  GuardianType type = 2;
+  VerificationInfo verification_info = 3;
+}
+
+message VerificationInfo {
+  aelf.Hash id = 1;
+  bytes signature = 2;
+  string verification_doc = 3;
+}
+
+enum StrategyValueType {
+  STRATEGY = 0;
+  LONG = 1;
+  VARIABLE = 2;
+}
+
+enum StrategyName {
+  And = 0;
+  Or = 1;
+  Not = 2;
+  IfElse = 3;
+  LargerThan = 4;
+  NotLargerThan = 5;
+  LessThan = 6;
+  NotLessThan = 7;
+  Equal = 8;
+  NotEqual = 9;
+  RatioByTenThousand = 10;
+}
+
+message StrategyNode {
+  StrategyName name = 1;
+  repeated StrategyValueType type = 2;
+  repeated bytes value = 3;
+}
+
+message StrategyLongWrapper {
+  int64 value = 1;
+}
+
+message StrategyStringWrapper {
+  string value = 1;
+}
+
+message AddGuardianInput {
+  aelf.Hash ca_hash = 1;
+  GuardianAccountInfo guardian_to_add = 2;
+  repeated GuardianAccountInfo guardians_approved = 3;
+}
+
+message RemoveGuardianInput {
+  aelf.Hash ca_hash = 1;
+  GuardianAccountInfo guardian_to_remove = 2;
+  repeated GuardianAccountInfo guardians_approved = 3;
+}
+
+message UpdateGuardianInput{
+  aelf.Hash ca_hash = 1;
+  GuardianAccountInfo guardian_to_update_pre = 2;
+  GuardianAccountInfo guardian_to_update_new = 3;
+  repeated GuardianAccountInfo guardians_approved = 4;
+}
+
+message SetGuardianAccountForLoginInput {
+  aelf.Hash ca_hash = 1;
+  GuardianAccount guardian_account = 2;
+}
+
+message UnsetGuardianAccountForLoginInput {
+  aelf.Hash ca_hash = 1;
+  GuardianAccount guardian_account = 2;
+}
+
+message ManagerForwardCallInput {
+  aelf.Hash ca_hash = 1;
+  aelf.Address contract_address = 2;
+  string method_name = 3;
+  bytes args = 4;
+}
+
+message ManagerTransferInput{
+  aelf.Hash ca_hash = 1;
+  // The receiver of the token.
+  aelf.Address to = 2;
+  // The token symbol to transfer.
+  string symbol = 3;
+  // The amount to to transfer.
+  int64 amount = 4;
+  // The memo.
+  string memo = 5;
+}
+
+message ManagerTransferFromInput{
+  aelf.Hash ca_hash = 1;
+  // The source address of the token.
+  aelf.Address from = 2;
+  // The destination address of the token.
+  aelf.Address to = 3;
+  // The symbol of the token to transfer.
+  string symbol = 4;
+  // The amount to transfer.
+  int64 amount = 5;
+  // The memo.
+  string memo = 6;
+}
+
+message GetHolderInfoInput {
+  aelf.Hash ca_hash = 1;
+  string login_guardian_account = 2;
+  aelf.Hash verifier_id = 3;
+}
+
+message GetHolderInfoOutput{
+  aelf.Hash ca_hash = 1;
+  aelf.Address ca_address = 2;
+  GuardiansInfo guardians_info = 3;
+  repeated Manager managers = 4;
+}
+
+message SocialRecoveryInput {
+  string login_guardian_account = 1;
+  aelf.Hash verifier_id = 2;
+  repeated GuardianAccountInfo guardians_approved = 3;
+  Manager manager = 4;
+}
+
+message AddManagerInput {
+  aelf.Hash ca_hash = 1;
+  Manager manager = 2;
+}
+
+message RemoveManagerInput {
+  aelf.Hash ca_hash = 1;
+  Manager manager = 2;
+}
+
+message AddVerifierServerEndPointsInput {
+  // If not exists, add; If does, insert
+  string name = 1;
+  string image_url = 2;
+  // Add all, ignore if has duplicates
+  repeated string end_points = 3;
+  repeated aelf.Address verifier_address_list = 4;
+}
+
+message RemoveVerifierServerInput {
+  // If not exists, add; If does, insert
+  aelf.Hash id = 1;
+}
+
+message RemoveVerifierServerEndPointsInput {
+  // If not exists, ignore
+  aelf.Hash id = 1;
+  // Remove all, ignore if do not exist
+  repeated string end_points = 2;
+}
+
+message AddCAServerInput{
+  string name = 1;
+  string end_points = 2;
+}
+
+message RemoveCAServerInput {
+  string name = 1;
+}
+
+message GetVerifierServersOutput {
+  repeated VerifierServer verifier_servers = 1;
+}
+
+message GetCAServersOutput {
+  repeated CAServer ca_servers = 1;
+}
+
+message ValidateCAHolderInfoWithManagersExistsInput {
+  aelf.Hash ca_hash = 1;
+  repeated Manager managers = 2;
+  repeated GuardianAccount login_guardian_accounts = 3;
+  repeated GuardianAccount not_login_guardian_accounts = 4;
+}
+
+message VerificationTransactionInfo {
+  int32 from_chain_id = 1;
+  int64 parent_chain_height = 2;
+  bytes transaction_bytes = 3;
+  aelf.MerklePath merkle_path = 4;
+}
+
+message SyncHolderInfoInput {
+  VerificationTransactionInfo verification_transaction_info = 1;
+}
+
+message ValidateStrategyInput {
+  StrategyNode strategy_node = 1;
+  map<string, int64> variables = 2;
+}
+
+message ValidateStrategyOutput {
+  bool bool_result = 1;
+  int64 int64_result = 2;
+  StrategyNode strategy_output = 3;
+}
+
+// LogEvent
+// CAHolder created
+message CAHolderCreated {
+  option (aelf.is_event) = true;
+  aelf.Address creator = 1 [(aelf.is_indexed) = true];
+  aelf.Hash ca_hash = 2 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 3 [(aelf.is_indexed) = true];
+  aelf.Address manager = 4 [(aelf.is_indexed) = true];
+  string device_string = 5;
+}
+
+//Guardian added
+message GuardianAdded{
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1[(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2;
+  GuardianAccount guardian_added = 3;
+}
+
+//Guardian removed
+message GuardianRemoved{
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1[(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2;
+  GuardianAccount guardian_removed = 3;
+}
+
+//Guardian updated
+message GuardianUpdated{
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1[(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2;
+  GuardianAccount guardian_updated_pre = 3;
+  GuardianAccount guardian_updated_new = 4;
+}
+
+// LoginGuardianAccount added
+message LoginGuardianAccountAdded {
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2;
+  aelf.Address manager = 3 [(aelf.is_indexed) = true];
+  GuardianAccount login_guardian_account = 4 [(aelf.is_indexed) = true];
+}
+
+// SocialRecovery
+message ManagerSocialRecovered {
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2 [(aelf.is_indexed) = true];
+  aelf.Address manager = 3 [(aelf.is_indexed) = true];
+  string device_string = 4;
+}
+
+// Manager added
+message ManagerAdded {
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2 [(aelf.is_indexed) = true];
+  aelf.Address manager = 3 [(aelf.is_indexed) = true];
+  string device_string = 4;
+}
+
+// Manager removed
+message ManagerRemoved {
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2 [(aelf.is_indexed) = true];
+  aelf.Address manager = 3 [(aelf.is_indexed) = true];
+  string device_string = 4;
+}
+
+// LoginGuardianAccount removed
+message LoginGuardianAccountRemoved {
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2;
+  aelf.Address manager = 3 [(aelf.is_indexed) = true];
+  GuardianAccount login_guardian_account = 4 [(aelf.is_indexed) = true];
+}
+
+// VerifierServerEndPoints added
+message VerifierServerEndPointsAdded {
+  option (aelf.is_event) = true;
+  VerifierServer verifier_server = 1 [(aelf.is_indexed) = true];
+}
+
+// VerifierServerEndPoints removed
+message VerifierServerEndPointsRemoved {
+  option (aelf.is_event) = true;
+  VerifierServer verifier_server = 1 [(aelf.is_indexed) = true];
+}
+
+// VerifierServer removed
+message VerifierServerRemoved {
+  option (aelf.is_event) = true;
+  VerifierServer verifier_server = 1 [(aelf.is_indexed) = true];
+}
+
+message CAServerAdded {
+  option (aelf.is_event) = true;
+  CAServer ca_sever_added = 1;
+}
+
+message CAServerRemoved {
+  option (aelf.is_event) = true;
+  CAServer ca_server_removed = 1;
+}
