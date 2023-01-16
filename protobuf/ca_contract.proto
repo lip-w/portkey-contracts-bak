@@ -258,8 +258,7 @@ message ManagerTransferFromInput{
 
 message GetHolderInfoInput {
   aelf.Hash ca_hash = 1;
-  string login_guardian_account = 2;
-  aelf.Hash verifier_id = 3;
+  GuardianAccount login_guardian_account = 2;
 }
 
 message GetHolderInfoOutput{

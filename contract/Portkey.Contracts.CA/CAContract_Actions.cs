@@ -37,10 +37,11 @@ public partial class CAContract : CAContractContainer.CAContractBase
         Assert(input.Manager != null, "invalid input manager");
         var guardianAccountValue = input.GuardianApproved.Value;
         var holderId = State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo!.Id];
-        var holderInfo = holderId != null ? State.HolderInfoMap[holderId] : new HolderInfo();
 
         // if CAHolder does not exist
         if (holderId != null) return new Empty();
+        
+        var holderInfo = new HolderInfo();
         holderId = HashHelper.ConcatAndCompute(Context.TransactionId, Context.PreviousBlockHash);
 
         holderInfo.CreatorAddress = Context.Sender;
@@ -52,13 +53,13 @@ public partial class CAContract : CAContractContainer.CAContractBase
 
         var guardianAccount = new GuardianAccount
         {
-            Value = input.GuardianApproved!.Value,
+            Value = input.GuardianApproved.Value,
             Guardian = new Guardian
             {
                 Type = input.GuardianApproved.Type,
                 Verifier = new Verifier
                 {
-                    Id = input.GuardianApproved.VerificationInfo!.Id
+                    Id = input.GuardianApproved.VerificationInfo.Id
                 }
             }
         };
@@ -76,7 +77,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count, 1, holderInfo.JudgementStrategy);
 
         State.HolderInfoMap[holderId] = holderInfo;
-        State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo!.Id] = holderId;
+        State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo.Id] = holderId;
 
         // Log Event
         Context.Fire(new CAHolderCreated
@@ -124,7 +125,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
             [CAContractConstants.ELFTokenSymbol] = CAContractConstants.CADelegationAmount
         };
 
-        Context.SendVirtualInline(holderId, State.TokenContract.Value, "SetTransactionFeeDelegations",
+        Context.SendVirtualInline(holderId, State.TokenContract.Value, nameof(State.TokenContract.SetTransactionFeeDelegations),
             new SetTransactionFeeDelegationsInput
             {
                 DelegatorAddress = manager.ManagerAddress,
@@ -145,7 +146,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
 
     private void RemoveDelegator(Hash holderId, Manager manager)
     {
-        Context.SendVirtualInline(holderId, State.TokenContract.Value, "RemoveTransactionFeeDelegator",
+        Context.SendVirtualInline(holderId, State.TokenContract.Value, nameof(State.TokenContract.RemoveTransactionFeeDelegator),
             new RemoveTransactionFeeDelegatorInput
             {
                 DelegatorAddress = manager.ManagerAddress
