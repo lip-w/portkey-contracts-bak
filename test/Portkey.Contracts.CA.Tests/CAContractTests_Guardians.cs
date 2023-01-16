@@ -246,7 +246,8 @@ public partial class CAContractTests
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash
+                CaHash = caHash,
+                LoginGuardianAccount = new GuardianAccount()
             });
             holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);
             holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);

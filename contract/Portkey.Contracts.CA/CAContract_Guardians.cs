@@ -56,7 +56,7 @@ public partial class CAContract
         IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count, guardianApprovedAmount,
             holderInfo.JudgementStrategy);
         
-        var loginGuardianAccounts = GetLoginGuardianAccounts(holderInfo.GuardiansInfo);
+        //var loginGuardianAccounts = GetLoginGuardianAccounts(holderInfo.GuardiansInfo);
 
         var guardianAdded = new GuardianAccount
         {
@@ -72,7 +72,7 @@ public partial class CAContract
         };
         State.HolderInfoMap[input.CaHash].GuardiansInfo?.GuardianAccounts.Add(guardianAdded);
         
-        ReIndexLoginGuardianAccount(loginGuardianAccounts, holderInfo.GuardiansInfo);
+        //ReIndexLoginGuardianAccount(loginGuardianAccounts, holderInfo.GuardiansInfo);
         
 
         Context.Fire(new GuardianAdded
@@ -109,7 +109,7 @@ public partial class CAContract
         //   Get all loginGuardianAccount.
         var loginGuardianAccount = GetLoginGuardianAccounts(holderInfo.GuardiansInfo);
         //   If the guardianAccount to be removed is a loginGuardianAccount, ...
-        if (loginGuardianAccount.Contains(toRemoveGuardian.Value))
+        if (loginGuardianAccount.Contains(toRemoveGuardian))
         {
             var loginGuardianAccountCount = holderInfo.GuardiansInfo.GuardianAccounts
                 .Select(g =>
@@ -157,18 +157,18 @@ public partial class CAContract
         return new Empty();
     }
 
-    private RepeatedField<string> GetLoginGuardianAccounts(GuardiansInfo guardiansInfo)
+    private RepeatedField<GuardianAccount> GetLoginGuardianAccounts(GuardiansInfo guardiansInfo)
     {
-        var loginGuardianAccounts = new RepeatedField<string>();
+        var loginGuardianAccounts = new RepeatedField<GuardianAccount>();
         foreach (var index in guardiansInfo.LoginGuardianAccountIndexes)
         {
-            loginGuardianAccounts.Add(guardiansInfo.GuardianAccounts[index].Value);
+            loginGuardianAccounts.Add(guardiansInfo.GuardianAccounts[index]);
         }
 
         return loginGuardianAccounts;
     }
 
-    private void ReIndexLoginGuardianAccount(RepeatedField<string> loginGuardianAccounts, GuardiansInfo guardiansInfo)
+    private void ReIndexLoginGuardianAccount(RepeatedField<GuardianAccount> loginGuardianAccounts, GuardiansInfo guardiansInfo)
     {
         guardiansInfo.LoginGuardianAccountIndexes.Clear();
 

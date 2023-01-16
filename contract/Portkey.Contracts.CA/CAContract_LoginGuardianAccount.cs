@@ -15,7 +15,7 @@ public partial class CAContract
     public override Empty SetGuardianAccountForLogin(SetGuardianAccountForLoginInput input)
     {
         Assert(input != null, "input should not be null");
-        Assert(input!.CaHash != null, "Cash should not be null");
+        Assert(input.CaHash != null, "Cash should not be null");
         // GuardianAccount should be valid, not null, and be with non-null Value
         Assert(input.GuardianAccount != null, "GuardianAccount should not be null");
         Assert(!string.IsNullOrEmpty(input.GuardianAccount?.Value), "Guardian account should not be null");
@@ -42,7 +42,7 @@ public partial class CAContract
             return new Empty();
         }
 
-        FindGuardianAccountAndSet(holderInfo.GuardiansInfo, input.GuardianAccount.Value);
+        FindGuardianAccountAndSet(holderInfo.GuardiansInfo, input.GuardianAccount);
 
         State.LoginGuardianAccountMap[loginGuardianAccount]
             .Set(input.GuardianAccount.Guardian.Verifier.Id, input.CaHash);
@@ -74,7 +74,7 @@ public partial class CAContract
         var loginGuardianAccount = input.GuardianAccount.Value;
         // Try to find the index of the GuardianAccount
         var guardians = holderInfo.GuardiansInfo.GuardianAccounts;
-        var index = FindGuardianAccount(guardians, input.GuardianAccount.Value);
+        var index = FindGuardianAccount(guardians, input.GuardianAccount);
 
         // not found, quit to be idempotent
         if (index >= guardians.Count)
@@ -124,33 +124,34 @@ public partial class CAContract
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void FindGuardianAccountAndSet(GuardiansInfo guardiansInfo, string loginGuardianAccount)
+    private void FindGuardianAccountAndSet(GuardiansInfo guardiansInfo, GuardianAccount loginGuardianAccount)
     {
         var guardians = guardiansInfo.GuardianAccounts;
 
         var index = FindGuardianAccount(guardians, loginGuardianAccount);
 
         // if index == guardians.Count, shows that it is not found and be out of bounds.
-        if (index < guardians.Count)
+        if (index >= guardians.Count) return;
+        
+        // Add the index in array.
+        // To be idempotent.
+        if (!guardiansInfo.LoginGuardianAccountIndexes.Contains(index))
         {
-            // Add the index in array.
-            // To be idempotent.
-            if (!guardiansInfo.LoginGuardianAccountIndexes.Contains(index))
-            {
-                guardiansInfo.LoginGuardianAccountIndexes.Add(index);
-            }
+            guardiansInfo.LoginGuardianAccountIndexes.Add(index);
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindGuardianAccount(RepeatedField<GuardianAccount> guardians, string loginGuardianAccount)
+    private int FindGuardianAccount(RepeatedField<GuardianAccount> guardianAccounts,
+        GuardianAccount loginGuardianAccount)
     {
         // Find the same guardian in guardians
         // Why don't use Select((g,i) => new {g,i})? Because contract don't allow.
-        int index = 0;
-        foreach (var guardian in guardians)
+        var index = 0;
+        foreach (var guardianAccount in guardianAccounts)
         {
-            if (guardian.Value == loginGuardianAccount)
+            if (guardianAccount.Value == loginGuardianAccount.Value &&
+                guardianAccount.Guardian.Verifier.Id == loginGuardianAccount.Guardian.Verifier.Id)
             {
                 break;
             }
