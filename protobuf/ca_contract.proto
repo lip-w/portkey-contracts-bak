@@ -423,7 +423,8 @@ message ManagerRemoved {
   string device_string = 4;
 }
 
-message LoginGuardianAccountUnsetted {
+// LoginGuardianAccount unset
+message LoginGuardianAccountUnset {
   option (aelf.is_event) = true;
   aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
   aelf.Address ca_address = 2;
