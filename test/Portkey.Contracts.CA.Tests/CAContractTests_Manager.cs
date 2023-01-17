@@ -475,11 +475,7 @@ public partial class CAContractTests : CAContractTestBase
            LoginGuardianAccount = GuardianAccount,
            GuardiansApproved = { guardianApprove }
        });
-
-       var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
-       {
-           LoginGuardianAccount = GuardianAccount
-       });
+       
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
    }
    
