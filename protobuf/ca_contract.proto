@@ -118,7 +118,7 @@ message Verifier {
 
 message VerifierServer {
   aelf.Hash id = 1;
-  string name123 = 2;
+  string name = 2;
   string image_url = 3;
   repeated string end_points = 4;
   repeated aelf.Address verifier_address = 5;

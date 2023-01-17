@@ -25,14 +25,14 @@ public partial class CAContract
 
         var verifierServerList = State.VerifiersServerList.Value;
         var server = verifierServerList.VerifierServers
-            .FirstOrDefault(server => server.Name123 == input.Name);
+            .FirstOrDefault(server => server.Name == input.Name);
 
         if (server == null)
         {
             State.VerifiersServerList.Value.VerifierServers.Add(new VerifierServer
             {
                 Id = serverId,
-                Name123 = input.Name,
+                Name = input.Name,
                 ImageUrl = input.ImageUrl,
                 EndPoints = { input.EndPoints },
                 VerifierAddress = { input.VerifierAddressList }
@@ -70,7 +70,7 @@ public partial class CAContract
             VerifierServer = new VerifierServer
             {
                 Id = serverId,
-                Name123 = input.Name,
+                Name = input.Name,
                 ImageUrl = input.ImageUrl,
                 EndPoints = { input.EndPoints },
                 VerifierAddress = { input.VerifierAddressList }

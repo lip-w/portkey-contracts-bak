@@ -192,7 +192,15 @@ public partial class CAContractTests : CAContractTestBase
          guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
          var guardian = new GuardianAccount
          {
-             Value = GuardianAccount
+             Value = GuardianAccount,
+             Guardian = new Guardian
+             {
+                 Type = GuardianType.OfEmail,
+                 Verifier = new Verifier
+                 {
+                     Id = verifierId
+                 }
+             }
          };
          getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, guardian);
          var verificationTime = DateTime.UtcNow;
