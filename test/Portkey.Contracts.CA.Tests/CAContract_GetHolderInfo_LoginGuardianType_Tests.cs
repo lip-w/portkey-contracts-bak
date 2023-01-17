@@ -556,7 +556,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
 
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_FailedUniqueLoginguardianType_Test()
+    public async Task UnsetLoginGuardianAccount_FailedUniqueLoginGuardianType_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 

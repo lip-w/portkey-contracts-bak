@@ -121,7 +121,7 @@ public partial class CAContract
             {
                 CaHash = input.CaHash,
                 CaAddress = CalculateCaAddress(input.CaHash),
-                LoginGuardianAccount = loginGuardianAccount.Value,
+                LoginGuardianAccount = loginGuardianAccount,
                 Manager = Context.Sender
             });
         }

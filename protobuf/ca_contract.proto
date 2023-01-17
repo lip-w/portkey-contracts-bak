@@ -438,7 +438,7 @@ message LoginGuardianAccountRemoved {
   aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
   aelf.Address ca_address = 2;
   aelf.Address manager = 3 [(aelf.is_indexed) = true];
-  string login_guardian_account = 4 [(aelf.is_indexed) = true];
+  GuardianAccount login_guardian_account = 4 [(aelf.is_indexed) = true];
 }
 
 // VerifierServerEndPoints added
