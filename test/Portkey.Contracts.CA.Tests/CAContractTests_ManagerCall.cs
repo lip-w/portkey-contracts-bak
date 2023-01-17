@@ -17,8 +17,7 @@ public partial class CAContractTests
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash,
-                LoginGuardianAccount = new GuardianAccount()
+                CaHash = caHash
             });
             caAddress = holderInfo.CaAddress;
         }
@@ -182,8 +181,7 @@ public partial class CAContractTests
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash,
-                LoginGuardianAccount = new GuardianAccount()
+                CaHash = caHash
             });
             caAddress = holderInfo.CaAddress;
         }
@@ -219,8 +217,7 @@ public partial class CAContractTests
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash,
-                LoginGuardianAccount = new GuardianAccount()
+                CaHash = caHash
             });
             caAddress = holderInfo.CaAddress;
         }
@@ -328,8 +325,7 @@ public partial class CAContractTests
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash,
-                LoginGuardianAccount = new GuardianAccount()
+                CaHash = caHash
             });
             caAddress = holderInfo.CaAddress;
         }
@@ -396,8 +392,7 @@ public partial class CAContractTests
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash,
-                LoginGuardianAccount = new GuardianAccount()
+                CaHash = caHash
             });
             caAddress = holderInfo.CaAddress;
         }

@@ -70,18 +70,7 @@ public partial class CAContractTests : CAContractTestBase
          });
          var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
          {
-             LoginGuardianAccount = new GuardianAccount
-             {
-                 Value = GuardianAccount,
-                 Guardian = new Guardian
-                 {
-                     Type = GuardianType.OfEmail,
-                     Verifier = new Verifier
-                     {
-                         Id = id
-                     }
-                 }
-             }
+             LoginGuardianAccount = GuardianAccount
          });
          caInfo.Managers.Count.ShouldBe(1);
          caInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(1);
@@ -191,8 +180,7 @@ public partial class CAContractTests : CAContractTestBase
         
          var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
          {
-             CaHash = caHash,
-             LoginGuardianAccount = new GuardianAccount()
+             CaHash = caHash
          });
         
          var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
@@ -232,18 +220,7 @@ public partial class CAContractTests : CAContractTestBase
         var id = verifierServer.VerifierServers[0].Id;
         var caHolderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = new GuardianAccount
-            {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = id
-                    }
-                }
-            }
+            LoginGuardianAccount = GuardianAccount
         });
         caHolderInfo.Managers.Count.ShouldBe(2);
         caHolderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);

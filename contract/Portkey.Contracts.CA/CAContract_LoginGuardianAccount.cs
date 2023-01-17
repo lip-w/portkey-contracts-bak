@@ -20,14 +20,14 @@ public partial class CAContract
         Assert(input.GuardianAccount != null, "GuardianAccount should not be null");
         Assert(!string.IsNullOrEmpty(input.GuardianAccount?.Value), "Guardian account should not be null");
         CheckManagerPermission(input.CaHash, Context.Sender);
+        
         var holderInfo = State.HolderInfoMap[input.CaHash];
-        var loginGuardianAccount = input.GuardianAccount!.Value;
+        var loginGuardian = input.GuardianAccount;
 
-        var isOccupied = CheckLoginGuardianIsNotOccupied(loginGuardianAccount,
-            input.GuardianAccount.Guardian.Verifier.Id, input.CaHash);
+        var isOccupied = CheckLoginGuardianIsNotOccupied(loginGuardian, input.CaHash);
 
         Assert(isOccupied != CAContractConstants.LoginGuardianAccountIsOccupiedByOthers,
-            $"The login guardian type --{loginGuardianAccount}-- is occupied by others!");
+            $"The login guardian type --{loginGuardian.Value}-- is occupied by others!");
 
         // for idempotent
         if (isOccupied == CAContractConstants.LoginGuardianAccountIsYours)
@@ -37,15 +37,16 @@ public partial class CAContract
 
         Assert(isOccupied == CAContractConstants.LoginGuardianAccountIsNotOccupied,
             "Internal error, how can it be?");
-        if (!LoginGuardianAccountIsInGuardians(holderInfo.GuardiansInfo.GuardianAccounts, input.GuardianAccount.Value))
+        if (!LoginGuardianAccountIsInGuardians(holderInfo.GuardiansInfo.GuardianAccounts, input.GuardianAccount))
         {
             return new Empty();
         }
 
         FindGuardianAccountAndSet(holderInfo.GuardiansInfo, input.GuardianAccount);
 
-        State.LoginGuardianAccountMap[loginGuardianAccount]
-            .Set(input.GuardianAccount.Guardian.Verifier.Id, input.CaHash);
+        State.LoginGuardianAccountMap[loginGuardian.Value][loginGuardian.Guardian.Verifier.Id] = input.CaHash;
+
+        State.GuardianAccountMap[loginGuardian.Value] = input.CaHash;
 
         Context.Fire(new LoginGuardianAccountAdded
         {
@@ -67,14 +68,15 @@ public partial class CAContract
         Assert(input.GuardianAccount != null, "GuardianAccount can not be null");
         Assert(!string.IsNullOrEmpty(input.GuardianAccount!.Value), "GuardianAccount. Value can not be null");
         CheckManagerPermission(input.CaHash, Context.Sender);
-        HolderInfo holderInfo = State.HolderInfoMap[input.CaHash];
+        
+        var holderInfo = State.HolderInfoMap[input.CaHash];
         // if CAHolder only have one LoginGuardian,not Allow Unset;
         Assert(holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Count > 1,
             "only one LoginGuardian,can not be Unset");
-        var loginGuardianAccount = input.GuardianAccount.Value;
+        var loginGuardianAccount = input.GuardianAccount;
         // Try to find the index of the GuardianAccount
         var guardians = holderInfo.GuardiansInfo.GuardianAccounts;
-        var index = FindGuardianAccount(guardians, input.GuardianAccount);
+        var index = FindGuardianAccount(guardians, loginGuardianAccount);
 
         // not found, quit to be idempotent
         if (index >= guardians.Count)
@@ -88,8 +90,8 @@ public partial class CAContract
             return new Empty();
         }
 
-        if (State.LoginGuardianAccountMap[loginGuardianAccount] == null
-            || State.LoginGuardianAccountMap[loginGuardianAccount][input.GuardianAccount.Guardian.Verifier.Id] !=
+        if (State.LoginGuardianAccountMap[loginGuardianAccount.Value] == null
+            || State.LoginGuardianAccountMap[loginGuardianAccount.Value][input.GuardianAccount.Guardian.Verifier.Id] !=
             input.CaHash)
         {
             return new Empty();
@@ -97,22 +99,35 @@ public partial class CAContract
 
         holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Remove(index);
         // not found, or removed and be registered by others later, quit to be idempotent
-        State.LoginGuardianAccountMap[loginGuardianAccount].Remove(input.GuardianAccount.Guardian.Verifier.Id);
-        Context.Fire(new LoginGuardianAccountRemoved
+        State.LoginGuardianAccountMap[loginGuardianAccount.Value].Remove(input.GuardianAccount.Guardian.Verifier.Id);
+        if (State.LoginGuardianAccountMap[loginGuardianAccount.Value] != null)
         {
-            CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash),
-            LoginGuardianAccount = input.GuardianAccount,
-            Manager = Context.Sender
-        });
-
+            Context.Fire(new LoginGuardianAccountUnset
+            {
+                CaHash = input.CaHash,
+                CaAddress = CalculateCaAddress(input.CaHash),
+                LoginGuardianAccount = loginGuardianAccount,
+                Manager = Context.Sender
+            });
+        }
+        else
+        {
+            State.GuardianAccountMap.Remove(loginGuardianAccount.Value);
+            Context.Fire(new LoginGuardianAccountRemoved
+            {
+                CaHash = input.CaHash,
+                CaAddress = CalculateCaAddress(input.CaHash),
+                LoginGuardianAccount = loginGuardianAccount.Value,
+                Manager = Context.Sender
+            }); 
+        }
         return new Empty();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int CheckLoginGuardianIsNotOccupied(string loginGuardianAccount, Hash verifierId, Hash caHash)
+    private int CheckLoginGuardianIsNotOccupied(GuardianAccount guardianAccount, Hash caHash)
     {
-        Hash result = State.LoginGuardianAccountMap[loginGuardianAccount][verifierId];
+        var result = State.LoginGuardianAccountMap[guardianAccount.Value][guardianAccount.Guardian.Verifier.Id];
         if (result == null)
         {
             return CAContractConstants.LoginGuardianAccountIsNotOccupied;
@@ -150,8 +165,7 @@ public partial class CAContract
         var index = 0;
         foreach (var guardianAccount in guardianAccounts)
         {
-            if (guardianAccount.Value == loginGuardianAccount.Value &&
-                guardianAccount.Guardian.Verifier.Id == loginGuardianAccount.Guardian.Verifier.Id)
+            if (guardianAccount.Equals(loginGuardianAccount))
             {
                 break;
             }
@@ -163,8 +177,8 @@ public partial class CAContract
     }
 
     private bool LoginGuardianAccountIsInGuardians(RepeatedField<GuardianAccount> guardians,
-        string loginGuardianAccount)
+        GuardianAccount guardianAccount)
     {
-        return guardians.Any(t => t.Value == loginGuardianAccount);
+        return guardians.Any(t => t .Equals(guardianAccount) );
     }
 }

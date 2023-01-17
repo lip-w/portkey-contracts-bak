@@ -112,18 +112,7 @@ public partial class CAContractTests : CAContractTestBase
 
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            LoginGuardianAccount = new GuardianAccount
-            {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = id
-                    }
-                }
-            }
+            LoginGuardianAccount = GuardianAccount
         });
         caInfo.Managers.Count.ShouldBe(2);
         caInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(1);
@@ -142,8 +131,7 @@ public partial class CAContractTests : CAContractTestBase
         var hash = await AddGuardianTest();
         var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            CaHash = hash,
-            LoginGuardianAccount = new GuardianAccount()
+            CaHash = hash
         });
         
         var verificationTime = DateTime.UtcNow;
@@ -490,18 +478,7 @@ public partial class CAContractTests : CAContractTestBase
 
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
    }
@@ -596,18 +573,7 @@ public partial class CAContractTests : CAContractTestBase
        
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
        caInfo.Managers.Count.ShouldBe(1);
        caInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(1);
@@ -708,18 +674,7 @@ public partial class CAContractTests : CAContractTestBase
        var id = verifierServer.VerifierServers[0].Id;
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
      
        //success
@@ -741,18 +696,7 @@ public partial class CAContractTests : CAContractTestBase
        delegateAllowance.Delegations["ELF"].ShouldBe(100000000);
        caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
        caInfo.Managers.ShouldContain(manager);
        //manager already existed
@@ -808,18 +752,7 @@ public partial class CAContractTests : CAContractTestBase
        var id = verifierServer.VerifierServers[0].Id;
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
      
        //success
@@ -846,18 +779,7 @@ public partial class CAContractTests : CAContractTestBase
        var id = verifierServer.VerifierServers[0].Id;
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
        
        //input ManagerAddress is null
@@ -906,18 +828,7 @@ public partial class CAContractTests : CAContractTestBase
        var id = verifierServer.VerifierServers[0].Id;
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
        var manager = new Manager
        {
@@ -932,18 +843,7 @@ public partial class CAContractTests : CAContractTestBase
       
        caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
        caInfo.Managers.Count.ShouldBe(1);
        
@@ -960,18 +860,7 @@ public partial class CAContractTests : CAContractTestBase
        var id = verifierServer.VerifierServers[0].Id;
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
-           LoginGuardianAccount = new GuardianAccount
-           {
-               Value = GuardianAccount,
-               Guardian = new Guardian
-               {
-                   Type = GuardianType.OfEmail,
-                   Verifier = new Verifier
-                   {
-                       Id = id
-                   }
-               }
-           }
+           LoginGuardianAccount = GuardianAccount
        });
        //caHolder not existed
        var notExistedCash = HashHelper.ComputeFrom("Invalid CaHash");
@@ -1069,18 +958,7 @@ public partial class CAContractTests : CAContractTestBase
        
         caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = new GuardianAccount
-            {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = id
-                    }
-                }
-            }
+            LoginGuardianAccount = GuardianAccount
         });
         caInfo.Managers.ShouldNotContain(manager);
         var delegateAllowance = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(new GetTransactionFeeDelegationsOfADelegateeInput()
@@ -1099,18 +977,7 @@ public partial class CAContractTests : CAContractTestBase
         var id = verifierServer.VerifierServers[0].Id;
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = new GuardianAccount
-            {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = id
-                    }
-                }
-            }
+            LoginGuardianAccount = GuardianAccount
         });
         var manager = new Manager
         {

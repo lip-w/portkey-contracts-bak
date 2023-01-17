@@ -97,18 +97,7 @@ public partial class CAContractTests
         });
         var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            LoginGuardianAccount = new GuardianAccount
-            {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = verifierId
-                    }
-                }
-            }
+            LoginGuardianAccount = GuardianAccount
         });
         holderInfo.GuardiansInfo.GuardianAccounts.First().Value.ShouldBe(GuardianAccount);
         
@@ -185,18 +174,7 @@ public partial class CAContractTests
         });
         var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            LoginGuardianAccount = new GuardianAccount
-            {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = verifierId
-                    }
-                }
-            }
+            LoginGuardianAccount = GuardianAccount
         });
         holderInfo.GuardiansInfo.GuardianAccounts.First().Value.ShouldBe(GuardianAccount);
         
@@ -246,8 +224,7 @@ public partial class CAContractTests
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash,
-                LoginGuardianAccount = new GuardianAccount()
+                CaHash = caHash
             });
             holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);
             holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);
