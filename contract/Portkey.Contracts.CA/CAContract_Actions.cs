@@ -36,9 +36,9 @@ public partial class CAContract : CAContractContainer.CAContractBase
             input.GuardianApproved!.VerificationInfo != null, "invalid verification");
         Assert(input.Manager != null, "invalid input manager");
         var guardianAccountValue = input.GuardianApproved.Value;
-        var holderId = State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo!.Id];
+        var holderId = State.GuardianAccountMap[guardianAccountValue];
 
-        // if CAHolder does not exist
+        // if CAHolder exists
         if (holderId != null) return new Empty();
         
         var holderInfo = new HolderInfo();
@@ -77,6 +77,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count, 1, holderInfo.JudgementStrategy);
 
         State.HolderInfoMap[holderId] = holderInfo;
+        State.GuardianAccountMap[guardianAccountValue] = holderId;
         State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo.Id] = holderId;
 
         // Log Event

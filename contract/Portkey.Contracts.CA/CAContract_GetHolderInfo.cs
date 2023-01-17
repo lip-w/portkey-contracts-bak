@@ -11,9 +11,8 @@ public partial class CAContract
         Assert(input != null, "input cannot be null!");
         // CaHash and loginGuardianAccount cannot be invalid at same time.
         Assert(
-            input.CaHash != null || !string.IsNullOrEmpty(input.LoginGuardianAccount.Value) &&
-            input.LoginGuardianAccount.Guardian.Verifier.Id != null,
-            $"CaHash is null, and loginGuardianAccount is empty: {input.CaHash}, {input.LoginGuardianAccount.Value}");
+            input!.CaHash != null || !string.IsNullOrEmpty(input.LoginGuardianAccount),
+            $"CaHash is null, or loginGuardianAccount is empty: {input.CaHash}, {input.LoginGuardianAccount}");
 
         var output = new GetHolderInfoOutput();
         HolderInfo holderInfo;
@@ -32,9 +31,9 @@ public partial class CAContract
             // use loginGuardianAccount to get holderInfo
             var loginGuardianAccount = input.LoginGuardianAccount;
             var caHash =
-                State.LoginGuardianAccountMap[loginGuardianAccount.Value][loginGuardianAccount.Guardian.Verifier.Id];
+                State.GuardianAccountMap[loginGuardianAccount];
             Assert(caHash != null,
-                $"Not found ca_hash by a the loginGuardianAccount {input.LoginGuardianAccount.Value}");
+                $"Not found ca_hash by a the loginGuardianAccount {input.LoginGuardianAccount}");
 
             holderInfo = State.HolderInfoMap[caHash];
             Assert(holderInfo != null,

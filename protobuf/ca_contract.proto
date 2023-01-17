@@ -258,7 +258,7 @@ message ManagerTransferFromInput{
 
 message GetHolderInfoInput {
   aelf.Hash ca_hash = 1;
-  GuardianAccount login_guardian_account = 2;
+  string login_guardian_account = 2;
 }
 
 message GetHolderInfoOutput{
@@ -270,9 +270,8 @@ message GetHolderInfoOutput{
 
 message SocialRecoveryInput {
   string login_guardian_account = 1;
-  aelf.Hash verifier_id = 2;
-  repeated GuardianAccountInfo guardians_approved = 3;
-  Manager manager = 4;
+  repeated GuardianAccountInfo guardians_approved = 2;
+  Manager manager = 3;
 }
 
 message AddManagerInput {
@@ -326,8 +325,8 @@ message GetCAServersOutput {
 message ValidateCAHolderInfoWithManagersExistsInput {
   aelf.Hash ca_hash = 1;
   repeated Manager managers = 2;
-  repeated GuardianAccount login_guardian_accounts = 3;
-  repeated GuardianAccount not_login_guardian_accounts = 4;
+  repeated string login_guardian_accounts = 3;
+  repeated string not_login_guardian_accounts = 4;
 }
 
 message VerificationTransactionInfo {
@@ -424,13 +423,21 @@ message ManagerRemoved {
   string device_string = 4;
 }
 
+message LoginGuardianAccountUnsetted {
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2;
+  aelf.Address manager = 3 [(aelf.is_indexed) = true];
+  GuardianAccount login_guardian_account = 4 [(aelf.is_indexed) = true];
+}
+
 // LoginGuardianAccount removed
 message LoginGuardianAccountRemoved {
   option (aelf.is_event) = true;
   aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
   aelf.Address ca_address = 2;
   aelf.Address manager = 3 [(aelf.is_indexed) = true];
-  GuardianAccount login_guardian_account = 4 [(aelf.is_indexed) = true];
+  string login_guardian_account = 4 [(aelf.is_indexed) = true];
 }
 
 // VerifierServerEndPoints added

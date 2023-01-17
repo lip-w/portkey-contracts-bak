@@ -36,8 +36,8 @@ public partial class CAContract
     }
 
     private void ValidateLoginGuardianAccount(Hash caHash, HolderInfo holderInfo,
-        RepeatedField<GuardianAccount> loginGuardianAccountInput,
-        RepeatedField<GuardianAccount> notLoginGuardianAccountInput)
+        RepeatedField<string> loginGuardianAccountInput,
+        RepeatedField<string> notLoginGuardianAccountInput)
     {
         var loginGuardians = new RepeatedField<string>();
         foreach (var index in holderInfo.GuardiansInfo.LoginGuardianAccountIndexes)
@@ -50,20 +50,16 @@ public partial class CAContract
 
         foreach (var loginGuardianAccount in loginGuardianAccountInput)
         {
-            Assert(loginGuardians.Contains(loginGuardianAccount.Value)
-                   && State.LoginGuardianAccountMap[loginGuardianAccount.Value][
-                       loginGuardianAccount.Guardian.Verifier.Id] ==
-                   caHash,
-                $"LoginGuardianAccount:{loginGuardianAccount.Value} is not in HolderInfo's LoginGuardianAccounts");
+            Assert(loginGuardians.Contains(loginGuardianAccount)
+                   && State.GuardianAccountMap[loginGuardianAccount] == caHash,
+                $"LoginGuardianAccount:{loginGuardianAccount} is not in HolderInfo's LoginGuardianAccounts");
         }
 
         foreach (var notLoginGuardianAccount in notLoginGuardianAccountInput)
         {
-            Assert(!loginGuardians.Contains(notLoginGuardianAccount.Value)
-                   && (State.LoginGuardianAccountMap[notLoginGuardianAccount.Value]
-                           [notLoginGuardianAccount.Guardian.Verifier.Id] == null
-                       || State.LoginGuardianAccountMap[notLoginGuardianAccount.Value][
-                           notLoginGuardianAccount.Guardian.Verifier.Id] != caHash),
+            Assert(!loginGuardians.Contains(notLoginGuardianAccount)
+                   && (State.GuardianAccountMap[notLoginGuardianAccount] == null
+                       || State.GuardianAccountMap[notLoginGuardianAccount] != caHash),
                 $"NotLoginGuardianAccount:{notLoginGuardianAccount} is in HolderInfo's LoginGuardianAccounts");
         }
     }
@@ -103,22 +99,17 @@ public partial class CAContract
         return new Empty();
     }
 
-    private void SyncLoginGuardianAccount(Hash caHash, RepeatedField<GuardianAccount> loginGuardianAccounts,
-        RepeatedField<GuardianAccount> notLoginGuardianAccounts)
+    private void SyncLoginGuardianAccount(Hash caHash, RepeatedField<string> loginGuardianAccounts,
+        RepeatedField<string> notLoginGuardianAccounts)
     {
         if (loginGuardianAccounts != null)
         {
             foreach (var loginGuardianAccount in loginGuardianAccounts)
             {
-                if (State.LoginGuardianAccountMap[loginGuardianAccount.Value]
-                        [loginGuardianAccount.Guardian.Verifier.Id] ==
-                    null ||
-                    State.LoginGuardianAccountMap[loginGuardianAccount.Value]
-                        [loginGuardianAccount.Guardian.Verifier.Id] !=
-                    caHash)
+                if (State.GuardianAccountMap[loginGuardianAccount] == null ||
+                    State.GuardianAccountMap[loginGuardianAccount] != caHash)
                 {
-                    State.LoginGuardianAccountMap[loginGuardianAccount.Value]
-                        .Set(loginGuardianAccount.Guardian.Verifier.Id, caHash);
+                    State.GuardianAccountMap.Set(loginGuardianAccount, caHash);
                 }
             }
         }
@@ -127,12 +118,9 @@ public partial class CAContract
         {
             foreach (var notLoginGuardianAccount in notLoginGuardianAccounts)
             {
-                if (State.LoginGuardianAccountMap[notLoginGuardianAccount.Value][
-                        notLoginGuardianAccount.Guardian.Verifier.Id] ==
-                    caHash)
+                if (State.GuardianAccountMap[notLoginGuardianAccount] == caHash)
                 {
-                    State.LoginGuardianAccountMap[notLoginGuardianAccount.Value]
-                        .Remove(notLoginGuardianAccount.Guardian.Verifier.Id);
+                    State.GuardianAccountMap.Remove(notLoginGuardianAccount);
                 }
             }
         }
