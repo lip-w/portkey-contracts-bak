@@ -17,13 +17,12 @@ public partial class CAContract
         {
             if (!asserted) throw new AssertionException(message);
         }
-        
+
         protected StrategyNode ByteStringToNode(ByteString byteString)
         {
             StrategyNode strategyNode = new StrategyNode();
             strategyNode.MergeFrom(byteString);
             return strategyNode;
-
         }
 
         public static StrategyNode DefaultStrategy()
@@ -100,7 +99,7 @@ public partial class CAContract
             };
         }
     }
-    
+
     public abstract class BinaryNumericStrategy : Strategy
     {
         // parameters can be a long, a string for variable, or an instance of NumericStrategy for more calculation.
@@ -112,14 +111,13 @@ public partial class CAContract
             One = StrategyValueFactory.Create(node.Type[0], node.Value[0]);
             Two = StrategyValueFactory.Create(node.Type[1], node.Value[1]);
             return this;
-
         }
 
         public override StrategyNode ToStrategyNode()
         {
             ByteString byteString0 = MemberToByteString(One, out StrategyValueType type0);
             ByteString byteString1 = MemberToByteString(Two, out StrategyValueType type1);
-            
+
             return new StrategyNode()
             {
                 Name = StrategyName,
@@ -144,7 +142,7 @@ public partial class CAContract
                 {
                     value = (long)obj;
                 }
-                
+
                 return new StrategyLongWrapper()
                 {
                     Value = value

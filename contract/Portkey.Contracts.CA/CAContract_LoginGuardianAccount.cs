@@ -15,7 +15,7 @@ public partial class CAContract
     public override Empty SetGuardianAccountForLogin(SetGuardianAccountForLoginInput input)
     {
         Assert(input != null, "input should not be null");
-        Assert(input.CaHash != null, "Cash should not be null");
+        Assert(input!.CaHash != null, "Cash should not be null");
         // GuardianAccount should be valid, not null, and be with non-null Value
         Assert(input.GuardianAccount != null, "GuardianAccount should not be null");
         Assert(!string.IsNullOrEmpty(input.GuardianAccount?.Value), "Guardian account should not be null");
@@ -62,10 +62,10 @@ public partial class CAContract
     public override Empty UnsetGuardianAccountForLogin(UnsetGuardianAccountForLoginInput input)
     {
         Assert(input != null, "Invalid input");
-        Assert(input.CaHash != null, "CaHash can not be null");
+        Assert(input!.CaHash != null, "CaHash can not be null");
         // GuardianAccount should be valid, not null, and be with non-null Value
         Assert(input.GuardianAccount != null, "GuardianAccount can not be null");
-        Assert(!string.IsNullOrEmpty(input.GuardianAccount.Value), "GuardianAccount. Value can not be null");
+        Assert(!string.IsNullOrEmpty(input.GuardianAccount!.Value), "GuardianAccount. Value can not be null");
         CheckManagerPermission(input.CaHash, Context.Sender);
         HolderInfo holderInfo = State.HolderInfoMap[input.CaHash];
         // if CAHolder only have one LoginGuardian,not Allow Unset;

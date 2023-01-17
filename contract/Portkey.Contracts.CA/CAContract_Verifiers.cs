@@ -1,7 +1,6 @@
 using System.Linq;
 using AElf;
 using AElf.Sdk.CSharp;
-using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
 namespace Portkey.Contracts.CA;
@@ -35,8 +34,8 @@ public partial class CAContract
                 Id = serverId,
                 Name123 = input.Name,
                 ImageUrl = input.ImageUrl,
-                EndPoints = {input.EndPoints},
-                VerifierAddress = {input.VerifierAddressList}
+                EndPoints = { input.EndPoints },
+                VerifierAddress = { input.VerifierAddressList }
             });
         }
         else
@@ -73,8 +72,8 @@ public partial class CAContract
                 Id = serverId,
                 Name123 = input.Name,
                 ImageUrl = input.ImageUrl,
-                EndPoints = {input.EndPoints},
-                VerifierAddress = {input.VerifierAddressList}
+                EndPoints = { input.EndPoints },
+                VerifierAddress = { input.VerifierAddressList }
             }
         });
 

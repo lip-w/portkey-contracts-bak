@@ -40,7 +40,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
 
         // if CAHolder exists
         if (holderId != null) return new Empty();
-        
+
         var holderInfo = new HolderInfo();
         holderId = HashHelper.ConcatAndCompute(Context.TransactionId, Context.PreviousBlockHash);
 
@@ -49,7 +49,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         SetDelegator(holderId, input.Manager);
 
         //Check verifier signature.
-        Assert(CheckVerifierSignatureAndData(input.GuardianApproved),"Guardian verification failed.");
+        Assert(CheckVerifierSignatureAndData(input.GuardianApproved), "Guardian verification failed.");
 
         var guardianAccount = new GuardianAccount
         {
@@ -126,7 +126,8 @@ public partial class CAContract : CAContractContainer.CAContractBase
             [CAContractConstants.ELFTokenSymbol] = CAContractConstants.CADelegationAmount
         };
 
-        Context.SendVirtualInline(holderId, State.TokenContract.Value, nameof(State.TokenContract.SetTransactionFeeDelegations),
+        Context.SendVirtualInline(holderId, State.TokenContract.Value,
+            nameof(State.TokenContract.SetTransactionFeeDelegations),
             new SetTransactionFeeDelegationsInput
             {
                 DelegatorAddress = manager.ManagerAddress,
@@ -147,7 +148,8 @@ public partial class CAContract : CAContractContainer.CAContractBase
 
     private void RemoveDelegator(Hash holderId, Manager manager)
     {
-        Context.SendVirtualInline(holderId, State.TokenContract.Value, nameof(State.TokenContract.RemoveTransactionFeeDelegator),
+        Context.SendVirtualInline(holderId, State.TokenContract.Value,
+            nameof(State.TokenContract.RemoveTransactionFeeDelegator),
             new RemoveTransactionFeeDelegatorInput
             {
                 DelegatorAddress = manager.ManagerAddress

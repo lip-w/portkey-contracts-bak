@@ -18,12 +18,12 @@ public partial class CAContract
         Assert(input != null, "invalid input");
         Assert(input!.LoginGuardianAccount != null && !string.IsNullOrEmpty(input.LoginGuardianAccount),
             "invalid input login guardian account");
-        Assert(input.Manager != null,"invalid input manager");
+        Assert(input.Manager != null, "invalid input manager");
         Assert(input.Manager!.DeviceString != null && !string.IsNullOrEmpty(input.Manager.DeviceString),
             "invalid input deviceString");
-        Assert(input.Manager.ManagerAddress != null ,"invalid input managerAddress");
+        Assert(input.Manager.ManagerAddress != null, "invalid input managerAddress");
         var loginGuardianAccount = input.LoginGuardianAccount;
-        var caHash = State.LoginGuardianAccountMap[loginGuardianAccount][input.VerifierId];
+        var caHash = State.GuardianAccountMap[loginGuardianAccount];
 
         Assert(caHash != null, "CA Holder does not exist.");
 
@@ -44,9 +44,10 @@ public partial class CAContract
                 guardianApprovedAmount++;
             }
         }
+
         IsJudgementStrategySatisfied(guardians.Count, guardianApprovedAmount,
             holderInfo.JudgementStrategy);
-        
+
         // Manager exists
         if (holderInfo.Managers.Contains(input.Manager))
         {
@@ -72,7 +73,7 @@ public partial class CAContract
         // Assert(Context.ChainId == ChainHelper.ConvertBase58ToChainId("AELF"),
         //     "Manager can only be added at AElf mainchain.");
         Assert(input != null, "invalid input");
-        CheckManagerInput(input.CaHash, input.Manager);
+        CheckManagerInput(input!.CaHash, input.Manager);
         //Assert(Context.Sender.Equals(input.Manager.ManagerAddress), "No permission to add");
 
         // Manager exists
@@ -80,9 +81,10 @@ public partial class CAContract
         {
             return new Empty();
         }
+
         State.HolderInfoMap[input.CaHash].Managers.Add(input.Manager);
         SetDelegator(input.CaHash, input.Manager);
-        
+
         Context.Fire(new ManagerAdded
         {
             CaHash = input.CaHash,
@@ -90,7 +92,7 @@ public partial class CAContract
             Manager = input.Manager.ManagerAddress,
             DeviceString = input.Manager.DeviceString
         });
-        
+
         return new Empty();
     }
 
@@ -99,7 +101,7 @@ public partial class CAContract
         // Assert(Context.ChainId == ChainHelper.ConvertBase58ToChainId("AELF"),
         //     "Manager can only be removed at AElf mainchain.");
         Assert(input != null, "invalid input");
-        CheckManagerInput(input.CaHash, input.Manager);
+        CheckManagerInput(input!.CaHash, input.Manager);
         //Assert(Context.Sender.Equals(input.Manager.ManagerAddress), "No permission to remove");
 
         // Manager does not exist
@@ -107,6 +109,7 @@ public partial class CAContract
         {
             return new Empty();
         }
+
         State.HolderInfoMap[input.CaHash].Managers.Remove(input.Manager);
         RemoveDelegator(input.CaHash, input.Manager);
 
@@ -128,7 +131,7 @@ public partial class CAContract
         Assert(manager != null, "invalid input manager");
         Assert(!string.IsNullOrEmpty(manager!.DeviceString) && manager.ManagerAddress != null, "invalid input manager");
     }
-    
+
     public override Empty ManagerForwardCall(ManagerForwardCallInput input)
     {
         Assert(input.CaHash != null, "CA hash is null.");
@@ -160,9 +163,9 @@ public partial class CAContract
     {
         Assert(input.CaHash != null, "CA hash is null.");
         CheckManagerPermission(input.CaHash, Context.Sender);
-        Assert(input.From != null && input.To != null && !string.IsNullOrEmpty(input.Symbol), 
+        Assert(input.From != null && input.To != null && !string.IsNullOrEmpty(input.Symbol),
             "Invalid input.");
-        Context.SendVirtualInline(input.CaHash, State.TokenContract.Value, 
+        Context.SendVirtualInline(input.CaHash, State.TokenContract.Value,
             nameof(State.TokenContract.TransferFrom),
             new TransferFromInput
             {

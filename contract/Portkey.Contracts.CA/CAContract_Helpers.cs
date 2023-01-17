@@ -22,33 +22,37 @@ public partial class CAContract
         {
             return false;
         }
+
         var verifierDoc = verificationDoc.Split(",");
         if (verifierDoc.Length != 4)
         {
             return false;
         }
+
         //Check expired time 1h.
         var verificationTime = DateTime.SpecifyKind(Convert.ToDateTime(verifierDoc[2]), DateTimeKind.Utc);
         if (verificationTime.ToTimestamp().AddHours(1) <= Context.CurrentBlockTime ||
-            !int.TryParse(verifierDoc[0], out var type) || 
-            (int) guardianAccountInfo.Type != type ||
+            !int.TryParse(verifierDoc[0], out var type) ||
+            (int)guardianAccountInfo.Type != type ||
             guardianAccountInfo.Value != verifierDoc[1])
         {
             return false;
         }
+
         //Check verifier address and data.
         var verifierAddress = Address.FromBase58(verifierDoc[3]);
         var verificationInfo = guardianAccountInfo.VerificationInfo;
         var verifierServer =
             State.VerifiersServerList.Value.VerifierServers.FirstOrDefault(v => v.Id == verificationInfo.Id);
-        
+
         //Recovery verifier address.
         var data = HashHelper.ComputeFrom(verificationInfo.VerificationDoc);
         var publicKey = Context.RecoverPublicKey(verificationInfo.Signature.ToByteArray(),
             data.ToByteArray());
         var verifierAddressFromPublicKey = Address.FromPublicKey(publicKey);
-        
-        return verifierServer != null && verifierAddressFromPublicKey == verifierAddress && verifierServer.VerifierAddress.Contains(verifierAddress);
+
+        return verifierServer != null && verifierAddressFromPublicKey == verifierAddress &&
+               verifierServer.VerifierAddress.Contains(verifierAddress);
     }
 
     private bool IsGuardianExist(Hash caHash, GuardianAccountInfo guardianAccountInfo)
@@ -60,6 +64,4 @@ public partial class CAContract
         );
         return satisfiedGuardians != null;
     }
-    
-     
 }

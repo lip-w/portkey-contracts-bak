@@ -17,64 +17,62 @@ public partial class CAContract
         {
             return (bool)One.Validate(context) && (bool)Two.Validate(context);
         }
-    
     }
-    
+
     public class OrStrategy : BinaryBooleanStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.Or;
         }
-        
+
         public override Strategy Parse(StrategyNode node)
         {
             object o = new object();
-            
-            
+
+
             return new OrStrategy()
             {
                 One = StrategyFactory.Create(ByteStringToNode(node.Value[0])),
                 Two = StrategyFactory.Create(ByteStringToNode(node.Value[0]))
             };
         }
-    
+
         public override object Validate(IStrategyContext context)
         {
             return (bool)One.Validate(context) || (bool)Two.Validate(context);
         }
     }
-    
+
     public class NotStrategy : UnaryBooleanStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.Not;
         }
-    
+
         public override object Validate(IStrategyContext context)
         {
             return !(bool)One.Validate(context);
         }
-    
     }
-    
+
     public class IfElseStrategy : Strategy
     {
         public Strategy IfCondition { get; set; }
         public Strategy Than { get; set; }
         public Strategy Else { get; set; }
-    
+
         public override StrategyName StrategyName
         {
             get => StrategyName.IfElse;
         }
-    
+
         public override object Validate(IStrategyContext context)
         {
             return ((bool)IfCondition.Validate(context)) ? (bool)Than.Validate(context) : (bool)Else.Validate(context);
         }
-    
+
         public override Strategy Parse(StrategyNode node)
         {
             IfCondition = StrategyFactory.Create(ByteStringToNode(node.Value[0]));
@@ -82,9 +80,9 @@ public partial class CAContract
             Else = StrategyFactory.Create(ByteStringToNode(node.Value[2]));
             return this;
         }
-    
+
         public override StrategyNode ToStrategyNode()
-        { 
+        {
             return new StrategyNode()
             {
                 Name = StrategyName,
@@ -98,85 +96,85 @@ public partial class CAContract
             };
         }
     }
-    
+
     public class LargerThanStrategy : BinaryNumericCompareStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.LargerThan;
         }
-    
+
         protected override Func<long, long, bool> Compare
         {
             get => (one, two) => one > two;
         }
     }
-    
+
     public class NotLargerThanStrategy : BinaryNumericCompareStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.NotLargerThan;
         }
-    
+
         protected override Func<long, long, bool> Compare
         {
             get => (one, two) => one <= two;
         }
     }
-    
+
     public class LessThanStrategy : BinaryNumericCompareStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.LessThan;
         }
-    
+
         protected override Func<long, long, bool> Compare
         {
             get => (one, two) => one < two;
         }
     }
-    
+
     public class NotLessThanStrategy : BinaryNumericCompareStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.NotLessThan;
         }
-    
+
         protected override Func<long, long, bool> Compare
         {
             get => (one, two) => one >= two;
         }
     }
-    
+
     public class EqualStrategy : BinaryNumericCompareStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.Equal;
         }
-    
+
         protected override Func<long, long, bool> Compare
         {
             get => (one, two) => one == two;
         }
     }
-    
+
     public class NotEqualStrategy : BinaryNumericCompareStrategy
     {
         public override StrategyName StrategyName
         {
             get => StrategyName.NotEqual;
         }
-    
+
         protected override Func<long, long, bool> Compare
         {
             get => (one, two) => one != two;
         }
     }
-    
+
     public class RatioOfCountCalculationStrategy : BinaryNumericCalculateStrategy
     {
         public override StrategyName StrategyName
@@ -204,7 +202,7 @@ public partial class CAContract
                 context.Variables.Add(variableName, value);
             }
         }
-        
+
         var output = new ValidateStrategyOutput();
         var strategyNode = input.StrategyNode ?? Strategy.DefaultStrategy();
 
@@ -218,10 +216,10 @@ public partial class CAContract
         {
             output.BoolResult = (bool)strategy.Validate(context);
         }
-        
+
         // output.StrategyOutput = strategy.ToStrategyNode();
         output.StrategyOutput = strategyNode;
-        
+
         return output;
     }
 }

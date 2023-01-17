@@ -1,5 +1,3 @@
-
-
 using System.Collections.Generic;
 using AElf.Sdk.CSharp;
 using Google.Protobuf;
@@ -41,7 +39,7 @@ public partial class CAContract
             }
         }
     }
-    
+
     public class StrategyValueFactory
     {
         public static object Create(StrategyValueType type, ByteString byteString)
@@ -65,14 +63,13 @@ public partial class CAContract
             }
         }
     }
-    
+
     public interface IStrategyContext
     {
         public long AssignVariableAndToLong(object obj);
     }
 
-    
-    
+
     public class StrategyContext : IStrategyContext
     {
         public Dictionary<string, long> Variables { get; set; }
