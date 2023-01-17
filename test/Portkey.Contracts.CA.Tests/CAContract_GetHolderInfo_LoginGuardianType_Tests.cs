@@ -89,7 +89,7 @@ public partial class CAContractTests : CAContractTestBase
             LoginGuardianAccount = new GuardianAccount()
         });
 
-        executionResult.Value.ShouldContain("CaHash is null, and loginGuardianType is empty");
+        executionResult.Value.ShouldContain("CaHash is null, and loginGuardianAccount is empty: , ");
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public partial class CAContractTests : CAContractTestBase
             }
         });
 
-        executionResult.Value.ShouldContain("Not found ca_hash by a the loginGuardianType");
+        executionResult.Value.ShouldContain("Not found ca_hash by a the loginGuardianAccount Invalid");
     }
 
     [Fact]
@@ -719,7 +719,10 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
                 Guardian = new Guardian
                 {
                     Type = GuardianType.OfEmail,
-                    Verifier = new Verifier()
+                    Verifier = new Verifier
+                    {
+                        Id = new Hash()
+                    }
                 },
                 Value = GuardianAccount1
             }
@@ -827,7 +830,8 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
-                CaHash = caHash
+                CaHash = caHash,
+                LoginGuardianAccount = new GuardianAccount()
             });
             holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);
         }

@@ -54,7 +54,7 @@ public partial class CAContract
                    && State.LoginGuardianAccountMap[loginGuardianAccount.Value][
                        loginGuardianAccount.Guardian.Verifier.Id] ==
                    caHash,
-                $"LoginGuardianAccount:{loginGuardianAccount.Value} with Verifier Id:{loginGuardianAccount.Guardian.Verifier.Id} is not in HolderInfo's LoginGuardianAccounts");
+                $"LoginGuardianAccount:{loginGuardianAccount.Value} is not in HolderInfo's LoginGuardianAccounts");
         }
 
         foreach (var notLoginGuardianAccount in notLoginGuardianAccountInput)

@@ -142,7 +142,8 @@ public partial class CAContractTests : CAContractTestBase
         var hash = await AddGuardianTest();
         var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            CaHash = hash
+            CaHash = hash,
+            LoginGuardianAccount = new GuardianAccount()
         });
         
         var verificationTime = DateTime.UtcNow;

@@ -14,9 +14,14 @@ public partial class CAContractState : ContractState
     /// <summary>
     /// Login Guardian Account -> Verifier Id -> HolderInfo Hash
     /// multiple Login Guardian Account to one HolderInfo Hash
-    /// only on MainChain
     /// </summary>
     public MappedState<string, Hash, Hash> LoginGuardianAccountMap { get; set; }
+    
+    /// <summary>
+    /// Login Guardian Account -> HolderInfo Hash
+    /// multiple Login Guardian Account to one HolderInfo Hash
+    /// </summary>
+    public MappedState<string, Hash> GuardianAccountMap { get; set; }
     
     /// <summary>
     /// HolderInfo Hash -> HolderInfo
@@ -28,7 +33,6 @@ public partial class CAContractState : ContractState
 
     /// <summary>
     ///  Verifier list
-    /// only on MainChain
     /// </summary>
     public SingletonState<VerifierServerList> VerifiersServerList { get; set; }
 

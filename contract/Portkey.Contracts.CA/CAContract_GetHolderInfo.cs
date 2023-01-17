@@ -34,7 +34,7 @@ public partial class CAContract
             var caHash =
                 State.LoginGuardianAccountMap[loginGuardianAccount.Value][loginGuardianAccount.Guardian.Verifier.Id];
             Assert(caHash != null,
-                $"Not found ca_hash by a the loginGuardianAccount {input.LoginGuardianAccount.Value} with VerifierId {loginGuardianAccount.Guardian.Verifier.Id}.");
+                $"Not found ca_hash by a the loginGuardianAccount {input.LoginGuardianAccount.Value}");
 
             holderInfo = State.HolderInfoMap[caHash];
             Assert(holderInfo != null,
