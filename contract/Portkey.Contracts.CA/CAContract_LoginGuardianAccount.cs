@@ -104,24 +104,22 @@ public partial class CAContract
         var loginGuardianList = holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Select(i => guardians[i])
             .Where(g => g.Value == loginGuardianAccount.Value).ToList();
 
-        if (loginGuardianList.Count > 0)
+        Context.Fire(new LoginGuardianAccountRemoved
         {
-            Context.Fire(new LoginGuardianAccountUnset
-            {
-                CaHash = input.CaHash,
-                CaAddress = CalculateCaAddress(input.CaHash),
-                LoginGuardianAccount = loginGuardianAccount,
-                Manager = Context.Sender
-            });
-        }
-        else
+            CaHash = input.CaHash,
+            CaAddress = CalculateCaAddress(input.CaHash),
+            LoginGuardianAccount = loginGuardianAccount,
+            Manager = Context.Sender
+        });
+        
+        if (loginGuardianList.Count == 0)
         {
             State.GuardianAccountMap.Remove(loginGuardianAccount.Value);
-            Context.Fire(new LoginGuardianAccountRemoved
+            Context.Fire(new LoginGuardianAccountUnbind
             {
                 CaHash = input.CaHash,
                 CaAddress = CalculateCaAddress(input.CaHash),
-                LoginGuardianAccount = loginGuardianAccount,
+                LoginGuardianAccount = loginGuardianAccount.Value,
                 Manager = Context.Sender
             });
         }

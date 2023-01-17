@@ -498,7 +498,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     }
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_CashNull_Test()
+    public async Task UnsetLoginGuardianAccount_CaHashNull_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(

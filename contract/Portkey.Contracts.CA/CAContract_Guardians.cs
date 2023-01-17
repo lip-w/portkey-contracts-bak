@@ -15,9 +15,9 @@ public partial class CAContract
             "Invalid input.");
         Assert(State.HolderInfoMap[input.CaHash] != null, "CA holder does not exist.");
         Assert(State.HolderInfoMap[input.CaHash].GuardiansInfo != null, "No guardians under the holder.");
-        CheckManagerPermission(input.CaHash,Context.Sender);
+        CheckManagerPermission(input.CaHash, Context.Sender);
         var holderInfo = State.HolderInfoMap[input.CaHash];
-        
+
         //Whether the guardian account to be added has already in the holder info.
         //Filter: guardianAccount.type && guardianAccount.value && Verifier.Id
         var toAddGuardian = holderInfo.GuardiansInfo.GuardianAccounts.FirstOrDefault(g =>
@@ -31,10 +31,12 @@ public partial class CAContract
         }
 
         //Check the verifier signature and data of the guardian to be added.
-        Assert(CheckVerifierSignatureAndData(input.GuardianToAdd),"Guardian to add verification failed.");
+        Assert(CheckVerifierSignatureAndData(input.GuardianToAdd), "Guardian to add verification failed.");
 
         var guardianApprovedAmount = 0;
-        foreach (var guardian in input.GuardiansApproved)
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+            .ToList();
+        foreach (var guardian in guardianApprovedList)
         {
             //Whether the guardian exists in the holder info.
             if (!IsGuardianExist(input.CaHash, guardian)) continue;
@@ -45,11 +47,11 @@ public partial class CAContract
                 guardianApprovedAmount++;
             }
         }
-        
+
         //Whether the approved guardians count is satisfied.
         IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count, guardianApprovedAmount,
             holderInfo.JudgementStrategy);
-        
+
         //var loginGuardianAccounts = GetLoginGuardianAccounts(holderInfo.GuardiansInfo);
 
         var guardianAdded = new GuardianAccount
@@ -65,14 +67,14 @@ public partial class CAContract
             }
         };
         State.HolderInfoMap[input.CaHash].GuardiansInfo?.GuardianAccounts.Add(guardianAdded);
-        
+
         //ReIndexLoginGuardianAccount(loginGuardianAccounts, holderInfo.GuardiansInfo);
-        
+
 
         Context.Fire(new GuardianAdded
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash,Context.Self),
+            CaAddress = CalculateCaAddress(input.CaHash, Context.Self),
             GuardianAdded_ = guardianAdded
         });
         return new Empty();
@@ -116,7 +118,9 @@ public partial class CAContract
         }
 
         var guardianApprovedAmount = 0;
-        foreach (var guardian in input.GuardiansApproved)
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+            .ToList();
+        foreach (var guardian in guardianApprovedList)
         {
             Assert(
                 !(guardian.Type == toRemoveGuardian.Guardian.Type &&
@@ -132,7 +136,7 @@ public partial class CAContract
                 guardianApprovedAmount++;
             }
         }
-        
+
         //Whether the approved guardians count is satisfied.
         IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count.Sub(1), guardianApprovedAmount,
             holderInfo.JudgementStrategy);
@@ -182,7 +186,7 @@ public partial class CAContract
         Assert(input.GuardianToUpdatePre?.Type == input.GuardianToUpdateNew?.Type &&
                input.GuardianToUpdatePre?.Value == input.GuardianToUpdateNew?.Value, "Inconsistent guardian type.");
         Assert(State.HolderInfoMap[input.CaHash].GuardiansInfo != null, "No guardians under the holder.");
-        CheckManagerPermission(input.CaHash,Context.Sender);
+        CheckManagerPermission(input.CaHash, Context.Sender);
         var holderInfo = State.HolderInfoMap[input.CaHash];
 
         //Whether the guardian type to be updated in the holder info.
@@ -201,15 +205,17 @@ public partial class CAContract
         {
             return new Empty();
         }
-        
+
         var preGuardian = existPreGuardian.Clone();
-        
+
         //Check verifier id is exist.
         Assert(State.VerifiersServerList.Value.VerifierServers.FirstOrDefault(v =>
-            v.Id == input.GuardianToUpdateNew.VerificationInfo.Id) != null,"Verifier is not exist.");
+            v.Id == input.GuardianToUpdateNew.VerificationInfo.Id) != null, "Verifier is not exist.");
 
         var guardianApprovedAmount = 0;
-        foreach (var guardian in input.GuardiansApproved)
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+            .ToList();
+        foreach (var guardian in guardianApprovedList)
         {
             Assert(
                 !(guardian.Type == existPreGuardian.Guardian.Type &&
@@ -225,17 +231,17 @@ public partial class CAContract
                 guardianApprovedAmount++;
             }
         }
-        
+
         //Whether the approved guardians count is satisfied.
         IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count.Sub(1), guardianApprovedAmount,
             holderInfo.JudgementStrategy);
 
         existPreGuardian.Guardian.Verifier.Id = input.GuardianToUpdateNew?.VerificationInfo.Id;
-        
+
         Context.Fire(new GuardianUpdated
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash,Context.Self),
+            CaAddress = CalculateCaAddress(input.CaHash, Context.Self),
             GuardianUpdatedPre = preGuardian,
             GuardianUpdatedNew = existPreGuardian
         });

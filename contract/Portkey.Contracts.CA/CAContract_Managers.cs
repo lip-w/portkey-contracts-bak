@@ -33,7 +33,9 @@ public partial class CAContract
         Assert(input.GuardiansApproved.Count > 0, "invalid input Guardians Approved");
 
         var guardianApprovedAmount = 0;
-        foreach (var guardian in input.GuardiansApproved)
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+            .ToList();
+        foreach (var guardian in guardianApprovedList)
         {
             //Whether the guardian exists in the holder info.
             if (!IsGuardianExist(caHash, guardian)) continue;
