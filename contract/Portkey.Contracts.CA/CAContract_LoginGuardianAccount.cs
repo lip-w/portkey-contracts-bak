@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using AElf.Sdk.CSharp;
@@ -68,7 +69,7 @@ public partial class CAContract
         Assert(input.GuardianAccount != null, "GuardianAccount can not be null");
         Assert(!string.IsNullOrEmpty(input.GuardianAccount!.Value), "GuardianAccount. Value can not be null");
         CheckManagerPermission(input.CaHash, Context.Sender);
-        
+
         var holderInfo = State.HolderInfoMap[input.CaHash];
         // if CAHolder only have one LoginGuardian,not Allow Unset;
         Assert(holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Count > 1,
@@ -98,9 +99,12 @@ public partial class CAContract
         }
 
         holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Remove(index);
-        // not found, or removed and be registered by others later, quit to be idempotent
         State.LoginGuardianAccountMap[loginGuardianAccount.Value].Remove(input.GuardianAccount.Guardian.Verifier.Id);
-        if (State.LoginGuardianAccountMap[loginGuardianAccount.Value] != null)
+        // not found, or removed and be registered by others later, quit to be idempotent
+        var loginGuardianList = holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Select(i => guardians[i])
+            .Where(g => g.Value == loginGuardianAccount.Value).ToList();
+
+        if (loginGuardianList.Count > 0)
         {
             Context.Fire(new LoginGuardianAccountUnset
             {
@@ -119,8 +123,9 @@ public partial class CAContract
                 CaAddress = CalculateCaAddress(input.CaHash),
                 LoginGuardianAccount = loginGuardianAccount.Value,
                 Manager = Context.Sender
-            }); 
+            });
         }
+
         return new Empty();
     }
 

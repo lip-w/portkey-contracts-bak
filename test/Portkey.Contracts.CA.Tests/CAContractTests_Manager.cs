@@ -472,15 +472,14 @@ public partial class CAContractTests : CAContractTestBase
                ManagerAddress = User2Address,
                DeviceString = "567"
            },
-           LoginGuardianAccount = GuardianAccount,
-           GuardiansApproved = { guardianApprove }
+           LoginGuardianAccount = GuardianAccount
        });
 
        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
            LoginGuardianAccount = GuardianAccount
        });
-        result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
+        result.TransactionResult.Error.ShouldContain("invalid input Guardians Approved");
    }
    
    [Fact]

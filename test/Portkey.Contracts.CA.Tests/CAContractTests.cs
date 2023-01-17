@@ -176,7 +176,7 @@ public partial class CAContractTests : CAContractTestBase
      [Fact]
      public async Task CreateHolderFailedTest()
      {
-         var caHash = await CreateAHolder_AndGetCash_Helper();
+         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         
          var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
          {

@@ -112,7 +112,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_Succeed_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
         {
@@ -153,7 +153,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_Again_Succeed_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
         {
@@ -188,7 +188,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_CashNull_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
 
         var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
@@ -213,7 +213,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_CashNotExits_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
             new SetGuardianAccountForLoginInput()
             {
@@ -236,7 +236,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_GuardianTypeNull_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
             new SetGuardianAccountForLoginInput()
             {
@@ -251,7 +251,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_GuardianTypeEmpty_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
 
         var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
@@ -276,7 +276,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_GuardianTypeNotExists_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var guardianAccount = new GuardianAccount
         {
@@ -307,7 +307,7 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task SetLoginGuardianAccount_DuplicatedGuardianType_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var guardianAccount = new GuardianAccount
         {
@@ -391,7 +391,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_Succeed_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
@@ -423,7 +423,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_GuardianTypeNotIn_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
@@ -459,7 +459,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_Again_Succeed_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
@@ -500,7 +500,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_CashNull_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
             new UnsetGuardianAccountForLoginInput
             {
@@ -540,7 +540,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_GuardianTypeNull_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
 
         var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
@@ -558,7 +558,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_FailedUniqueLoginguardianType_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
@@ -599,7 +599,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_Unique_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
             new UnsetGuardianAccountForLoginInput
             {
@@ -621,7 +621,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_GuardianTypeEmpty_Test()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
             new UnsetGuardianAccountForLoginInput
             {
@@ -643,7 +643,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     [Fact]
     public async Task UnsetLoginGuardianAccount_GuardianTypeNotExitsTest()
     {
-        var caHash = await CreateAHolder_AndGetCash_Helper();
+        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
         await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
         {
             CaHash = caHash,
@@ -750,7 +750,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     }
 
 
-    private async Task<Hash> CreateAHolder_AndGetCash_Helper()
+    private async Task<Hash> CreateCAHolder_AndGetCaHash_Helper()
     {
         var caHash = await CreateHolder();
 
