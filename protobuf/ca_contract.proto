@@ -424,7 +424,7 @@ message ManagerRemoved {
 }
 
 // LoginGuardianAccount unset
-message LoginGuardianAccountUnbind {
+message LoginGuardianAccountUnbound {
   option (aelf.is_event) = true;
   aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
   aelf.Address ca_address = 2;

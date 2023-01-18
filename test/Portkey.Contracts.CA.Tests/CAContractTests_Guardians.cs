@@ -1067,6 +1067,17 @@ public partial class CAContractTests
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
+            },
+            new GuardianAccountInfo
+            {
+                Type = GuardianType.OfEmail,
+                Value = GuardianAccount,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = verifierId,
+                    Signature = signature,
+                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
+                }
             }
         };
         await CaContractStub.UpdateGuardian.SendAsync(new UpdateGuardianInput

@@ -34,7 +34,7 @@ public partial class CAContract
         Assert(CheckVerifierSignatureAndData(input.GuardianToAdd), "Guardian to add verification failed.");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -118,7 +118,7 @@ public partial class CAContract
         }
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -213,7 +213,7 @@ public partial class CAContract
             v.Id == input.GuardianToUpdateNew.VerificationInfo.Id) != null, "Verifier is not exist.");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {

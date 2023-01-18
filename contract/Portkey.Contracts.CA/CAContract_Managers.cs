@@ -33,7 +33,7 @@ public partial class CAContract
         Assert(input.GuardiansApproved.Count > 0, "invalid input Guardians Approved");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => new {g.Value, g.Type, g.VerificationInfo.Id})
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {

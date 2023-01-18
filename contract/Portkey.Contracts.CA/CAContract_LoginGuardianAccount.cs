@@ -115,7 +115,7 @@ public partial class CAContract
         if (loginGuardianList.Count == 0)
         {
             State.GuardianAccountMap.Remove(loginGuardianAccount.Value);
-            Context.Fire(new LoginGuardianAccountUnbind
+            Context.Fire(new LoginGuardianAccountUnbound
             {
                 CaHash = input.CaHash,
                 CaAddress = CalculateCaAddress(input.CaHash),
