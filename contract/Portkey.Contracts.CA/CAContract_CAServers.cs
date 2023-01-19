@@ -53,10 +53,16 @@ public partial class CAContract
 
     public override GetCAServersOutput GetCAServers(Empty input)
     {
-        var caServers = State.CaServerList.Value.CaServers;
-        return new GetCAServersOutput
+        var caServerList = State.CaServerList.Value;
+
+        if (caServerList != null && caServerList.CaServers != null)
         {
-            CaServers = { caServers }
-        };
+            return new GetCAServersOutput
+            {
+                CaServers = { caServerList.CaServers }
+            };
+        }
+
+        return new GetCAServersOutput();
     }
 }
