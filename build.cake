@@ -75,7 +75,7 @@ Task("Test-with-Codecov")
 Task("Upload-Coverage-Azure")
     .Does(() =>
 {
-    Codecov("./CodeCoverage/Cobertura.xml",EnvironmentVariable("CODECOV_TOKEN"));
+    Codecov("./CodeCoverage/Cobertura.xml","$CODECOV_TOKEN");
 });
 
 RunTarget(target);
