@@ -486,6 +486,9 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
                     Value = GuardianAccount1
                 }
             });
+        getHolderInfoOutput = await GetHolderInfo_Helper(caHash,"");
+        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
