@@ -49,15 +49,4 @@
     <ItemGroup>
       <PackageReference Include="AElf.Contracts.MultiToken" Version="1.2.2" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="..\..\..\AElfCode\protobuf\authority_info.proto">
-        <Link>Protobuf\Proto\authority_info.proto</Link>
-      </Content>
-      <Content Include="bin\Debug\Portkey.Contracts.CA.1.0.0.nupkg" />
-      <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.deps.json" />
-      <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.dll" />
-      <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.pdb" />
-      <Content Include="bin\Debug\Portkey.Contracts.CA.1.0.0.nupkg" />
-    </ItemGroup>
 </Project>

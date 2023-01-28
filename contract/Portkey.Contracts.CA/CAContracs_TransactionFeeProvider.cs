@@ -9,7 +9,7 @@ namespace Portkey.Contracts.CA;
 
 public partial class CAContract
 {
-    public Empty SetMethodFee(MethodFees input)
+    public  override Empty SetMethodFee(MethodFees input)
     {
         foreach (var methodFee in input.Fees) AssertValidToken(methodFee.Symbol, methodFee.BasicFee);
         Assert(Context.Sender == State.MethodFeeController.Value.OwnerAddress, "Unauthorized to set method fee.");
@@ -17,7 +17,7 @@ public partial class CAContract
         return new Empty();
     }
 
-    public Empty ChangeMethodFeeController(AuthorityInfo input)
+    public override Empty ChangeMethodFeeController(AuthorityInfo input)
     {
         AssertSenderAddressWith(State.MethodFeeController.Value.OwnerAddress);
         State.MethodFeeController.Value = input;
@@ -25,12 +25,12 @@ public partial class CAContract
     }
 
 
-    public  MethodFees GetMethodFee(StringValue input)
+    public override MethodFees GetMethodFee(StringValue input)
      {
          return State.TransactionFees[input.Value];
      }
     
-     public  AuthorityInfo GetMethodFeeController(Empty input)
+     public override AuthorityInfo GetMethodFeeController(Empty input)
      {
          return State.MethodFeeController.Value;
      }
