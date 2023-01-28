@@ -28,6 +28,12 @@
             <Link>Protobuf\Proto\association_contract.proto</Link>
         </ContractReference>
     </ItemGroup>
+    
+    <ItemGroup>
+        <ContractBase Include="..\..\protobuf\acs1.proto">
+            <Link>Protobuf\Proto\reference\acs1.proto</Link>
+        </ContractBase>
+    </ItemGroup>
 
     <ItemGroup>
         <ContractCode Include="..\..\protobuf\ca_contract.proto">
@@ -37,5 +43,12 @@
 
     <ItemGroup>
       <PackageReference Include="AElf.Contracts.MultiToken" Version="1.2.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.deps.json" />
+      <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.dll" />
+      <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.pdb" />
+      <Content Include="bin\Debug\Portkey.Contracts.CA.1.0.0.nupkg" />
     </ItemGroup>
 </Project>

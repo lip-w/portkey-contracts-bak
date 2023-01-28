@@ -16,7 +16,11 @@ public partial class CAContract : CAContractContainer.CAContractBase
         State.Admin.Value = input.ContractAdmin ?? Context.Sender;
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
+        State.MethodFeeController.Value.OwnerAddress = Context.Sender;
         State.Initialized.Value = true;
+
+
+        
         return new Empty();
     }
 
