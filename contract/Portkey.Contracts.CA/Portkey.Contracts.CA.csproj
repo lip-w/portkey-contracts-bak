@@ -15,6 +15,11 @@
         <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
     </PropertyGroup>
     <ItemGroup>
+        <CommonMessage Include="..\..\protobuf\authority_info.proto">
+            <Link>Protobuf\Proto\authority_info.proto</Link>
+        </CommonMessage>
+    </ItemGroup>
+    <ItemGroup>
         <ContractReference Include="..\..\protobuf\acs7.proto">
             <Link>Protobuf\Proto\acs7.proto</Link>
         </ContractReference>
@@ -46,6 +51,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Include="..\..\..\AElfCode\protobuf\authority_info.proto">
+        <Link>Protobuf\Proto\authority_info.proto</Link>
+      </Content>
+      <Content Include="bin\Debug\Portkey.Contracts.CA.1.0.0.nupkg" />
       <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.deps.json" />
       <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.dll" />
       <Content Include="bin\Debug\net6.0\Portkey.Contracts.CA.pdb" />
