@@ -19,6 +19,7 @@ public partial class CAContract
 
     public override Empty ChangeMethodFeeController(AuthorityInfo input)
     {
+        Assert(input.OwnerAddress != null,"Invalid OwnerAddress.");
         AssertSenderAddressWith(State.MethodFeeController.Value.OwnerAddress);
         State.MethodFeeController.Value = input;
         return new Empty();

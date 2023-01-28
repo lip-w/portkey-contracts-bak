@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf;
+using AElf.Contracts.MultiToken;
 using AElf.Cryptography;
 using AElf.Cryptography.ECDSA;
 using AElf.Kernel;
@@ -107,6 +108,12 @@ public partial class CAContractTests
             ManagerAddress = DefaultAddress,
             DeviceString = "iphone14-2022"
         };
+        await TokenContractStub.Transfer.SendAsync(new TransferInput
+        {
+            Amount = 1000000000000,
+            Symbol = "ELF",
+            To = holderInfo.CaAddress
+        });
         await CaContractUser1Stub.AddManager.SendAsync(new AddManagerInput
         {
             CaHash = holderInfo.CaHash,

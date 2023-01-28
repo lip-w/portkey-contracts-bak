@@ -80,7 +80,7 @@ public partial class CAContractTests : CAContractTestBase
              DelegateeAddress = caInfo.CaAddress,
              DelegatorAddress = User1Address
          });
-         delegateAllowance.Delegations["ELF"].ShouldBe(100000000);
+         delegateAllowance.Delegations["ELF"].ShouldBe(10000000000);
          /*var signature1 = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianType, 0);
          //create second caHolder
          await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput

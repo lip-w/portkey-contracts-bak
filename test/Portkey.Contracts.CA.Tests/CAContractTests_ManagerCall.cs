@@ -1,6 +1,8 @@
+using System.Linq;
 using System.Threading.Tasks;
 using AElf;
 using AElf.Contracts.MultiToken;
+using AElf.Kernel.FeeCalculation.Extensions;
 using AElf.Types;
 using Shouldly;
 using Xunit;
@@ -335,29 +337,41 @@ public partial class CAContractTests
             Symbol = "ELF"
         });
         balance1.Balance.ShouldBeGreaterThan(0);
-        await TokenContractStub.Transfer.SendAsync(new TransferInput
+        var balanceOutput = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+        {
+            Owner = DefaultAddress,
+            Symbol = "ELF"
+        });
+        var result = await TokenContractStub.Transfer.SendAsync(new TransferInput
         {
             Amount = 1_0000000_00000000,
             Symbol = "ELF",
             To = caAddress
         });
+        var currentBalance = balanceOutput.Balance -1_0000000_00000000 - result.TransactionResult.GetChargedTransactionFees()["ELF"];
         {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
                 Owner = DefaultAddress,
                 Symbol = "ELF"
             });
-            balance.Balance.ShouldBe(87_0000000_00000000);
+            balance.Balance.ShouldBe(currentBalance);
         }
         {
-            await TokenContractStub.Approve.SendAsync(new ApproveInput
+            var approveResult = await TokenContractStub.Approve.SendAsync(new ApproveInput
             {
                 Spender = caAddress,
                 Amount = 1_00000000_00000000,
                 Symbol = "ELF"
             });
+            currentBalance = currentBalance - approveResult.TransactionResult.GetChargedTransactionFees()["ELF"];
         }
-        await CaContractStubManager1.ManagerTransferFrom.SendAsync(new ManagerTransferFromInput
+        var caBalanceOutput = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+        {
+            Owner = caAddress,
+            Symbol = "ELF"
+        });
+        var managerTransferResult = await CaContractStubManager1.ManagerTransferFrom.SendAsync(new ManagerTransferFromInput
         {
             CaHash = caHash,
             From = DefaultAddress,
@@ -372,7 +386,7 @@ public partial class CAContractTests
                 Owner = DefaultAddress,
                 Symbol = "ELF"
             });
-            balance.Balance.ShouldBe(87_0000000_00000000 - 1_00000000);
+            balance.Balance.ShouldBe(currentBalance - 1_00000000);
         }
         {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
@@ -381,6 +395,14 @@ public partial class CAContractTests
                 Symbol = "ELF"
             });
             balance.Balance.ShouldBe(1_00000000);
+        }
+        {
+            var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = caAddress,
+                Symbol = "ELF"
+            });
+            balance.Balance.ShouldBe(caBalanceOutput.Balance-managerTransferResult.TransactionResult.GetChargedTransactionFees()["ELF"]);
         }
     }
     

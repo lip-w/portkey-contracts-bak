@@ -73,6 +73,16 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "123"
             }
         });
+        var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            LoginGuardianAccount = GuardianAccount
+        });
+        await TokenContractStub.Transfer.SendAsync(new TransferInput
+        {
+            Amount = 1000000000000,
+            Symbol = "ELF",
+            To = holderInfo.CaAddress
+        });
     }
 
     [Fact]
@@ -122,7 +132,7 @@ public partial class CAContractTests : CAContractTestBase
             DelegateeAddress = caInfo.CaAddress,
             DelegatorAddress = User2Address
         });
-        delegateAllowance.Delegations["ELF"].ShouldBe(100000000);
+        delegateAllowance.Delegations["ELF"].ShouldBe(10000000000L);
     }
 
     [Fact]
@@ -692,7 +702,7 @@ public partial class CAContractTests : CAContractTestBase
            DelegateeAddress = caInfo.CaAddress,
            DelegatorAddress = User2Address
        });
-       delegateAllowance.Delegations["ELF"].ShouldBe(100000000);
+       delegateAllowance.Delegations["ELF"].ShouldBe(10000000000L);
        caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
            LoginGuardianAccount = GuardianAccount
