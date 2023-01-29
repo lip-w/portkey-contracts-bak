@@ -127,7 +127,7 @@ message VerifierServer {
   string name = 2;
   string image_url = 3;
   repeated string end_points = 4;
-  repeated aelf.Address verifier_address = 5;
+  repeated aelf.Address verifier_addresses = 5;
 }
 
 message CAServer {
@@ -141,6 +141,10 @@ message VerifierServerList {
 
 message CAServerList {
   repeated CAServer ca_servers = 1;
+}
+
+message ControllerList {
+  repeated aelf.Address controllers = 1;
 }
 
 //Input

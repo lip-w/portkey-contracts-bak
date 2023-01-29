@@ -90,7 +90,7 @@ public partial class CAContractTests : CAContractTestBase
             CaHash = new Hash()
         });
 
-        executionResult.Value.ShouldContain("Holder by ca_hash:");
+        executionResult.Value.ShouldContain("Holder is not found");
     }
 
     [Fact]

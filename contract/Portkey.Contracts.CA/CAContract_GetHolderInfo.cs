@@ -15,34 +15,16 @@ public partial class CAContract
             $"CaHash is null, or loginGuardianAccount is empty: {input.CaHash}, {input.LoginGuardianAccount}");
 
         var output = new GetHolderInfoOutput();
-        HolderInfo holderInfo;
-        if (input.CaHash != null)
-        {
-            // use ca_hash to get holderInfo
-            holderInfo = State.HolderInfoMap[input.CaHash];
-            Assert(holderInfo != null,
-                $"Holder by ca_hash: {input.CaHash} is not found!");
 
-            output.CaHash = input.CaHash;
-            output.Managers.AddRange(holderInfo?.Managers.Clone());
-        }
-        else
-        {
-            // use loginGuardianAccount to get holderInfo
-            var loginGuardianAccount = input.LoginGuardianAccount;
-            var caHash =
-                State.GuardianAccountMap[loginGuardianAccount];
-            Assert(caHash != null,
-                $"Not found ca_hash by a the loginGuardianAccount {input.LoginGuardianAccount}");
-
-            holderInfo = State.HolderInfoMap[caHash];
-            Assert(holderInfo != null,
-                $"Holder by ca_hash: {input.CaHash} is not found!");
-
-            output.CaHash = caHash;
-            output.Managers.AddRange(holderInfo?.Managers.Clone());
-        }
-
+        var caHash = input.CaHash ?? State.GuardianAccountMap[input.LoginGuardianAccount];
+        Assert(caHash != null,
+            $"Not found ca_hash by a the loginGuardianAccount {input.LoginGuardianAccount}");
+        var holderInfo = State.HolderInfoMap[caHash];
+        Assert(holderInfo != null,
+            $"Holder is not found");
+        output.CaHash = caHash;
+        output.Managers.AddRange(holderInfo?.Managers.Clone());
+        
         output.CaAddress = CalculateCaAddress(output.CaHash);
         output.GuardiansInfo =
             holderInfo?.GuardiansInfo == null ? new GuardiansInfo() : holderInfo.GuardiansInfo.Clone();

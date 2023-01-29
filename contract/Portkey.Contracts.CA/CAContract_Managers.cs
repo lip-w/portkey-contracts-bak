@@ -26,9 +26,11 @@ public partial class CAContract
         var caHash = State.GuardianAccountMap[loginGuardianAccount];
 
         Assert(caHash != null, "CA Holder does not exist.");
-
+        
         var holderInfo = State.HolderInfoMap[caHash];
-        var guardians = holderInfo.GuardiansInfo.GuardianAccounts;
+        Assert(holderInfo != null, $"Not found holderInfo by caHash: {caHash}");
+        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {caHash}");
+        var guardians = holderInfo.GuardiansInfo!.GuardianAccounts;
 
         Assert(input.GuardiansApproved.Count > 0, "invalid input Guardians Approved");
 
@@ -77,14 +79,17 @@ public partial class CAContract
         Assert(input != null, "invalid input");
         CheckManagerInput(input!.CaHash, input.Manager);
         //Assert(Context.Sender.Equals(input.Manager.ManagerAddress), "No permission to add");
-
+        
+        var holderInfo = State.HolderInfoMap[input.CaHash];
+        Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        
         // Manager exists
-        if (State.HolderInfoMap[input.CaHash].Managers.Contains(input.Manager))
+        if (holderInfo!.Managers.Contains(input.Manager))
         {
             return new Empty();
         }
 
-        State.HolderInfoMap[input.CaHash].Managers.Add(input.Manager);
+        holderInfo.Managers.Add(input.Manager);
         SetDelegator(input.CaHash, input.Manager);
 
         Context.Fire(new ManagerAdded
@@ -106,13 +111,16 @@ public partial class CAContract
         CheckManagerInput(input!.CaHash, input.Manager);
         //Assert(Context.Sender.Equals(input.Manager.ManagerAddress), "No permission to remove");
 
+        var holderInfo = State.HolderInfoMap[input.CaHash];
+        Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        
         // Manager does not exist
-        if (!State.HolderInfoMap[input.CaHash].Managers.Contains(input.Manager))
+        if (!holderInfo!.Managers.Contains(input.Manager))
         {
             return new Empty();
         }
 
-        State.HolderInfoMap[input.CaHash].Managers.Remove(input.Manager);
+        holderInfo.Managers.Remove(input.Manager);
         RemoveDelegator(input.CaHash, input.Manager);
 
         Context.Fire(new ManagerRemoved
@@ -183,7 +191,6 @@ public partial class CAContract
     private void CheckManagerPermission(Hash caHash, Address managerAddress)
     {
         Assert(State.HolderInfoMap[caHash] != null, $"CA holder is null.CA hash:{caHash}");
-        var managerList = State.HolderInfoMap[caHash].Managers.Select(manager => manager.ManagerAddress).ToList();
-        Assert(managerList.Contains(managerAddress), "No permission.");
+        Assert(State.HolderInfoMap[caHash].Managers.Any(m => m.ManagerAddress == managerAddress), "No permission.");
     }
 }

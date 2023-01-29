@@ -23,6 +23,8 @@ public partial class CAContract
         CheckManagerPermission(input.CaHash, Context.Sender);
         
         var holderInfo = State.HolderInfoMap[input.CaHash];
+        Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        
         var loginGuardian = input.GuardianAccount;
 
         var isOccupied = CheckLoginGuardianIsNotOccupied(loginGuardian, input.CaHash);
@@ -38,6 +40,7 @@ public partial class CAContract
 
         Assert(isOccupied == CAContractConstants.LoginGuardianAccountIsNotOccupied,
             "Internal error, how can it be?");
+        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
         if (!LoginGuardianAccountIsInGuardians(holderInfo.GuardiansInfo.GuardianAccounts, input.GuardianAccount))
         {
             return new Empty();
@@ -71,8 +74,11 @@ public partial class CAContract
         CheckManagerPermission(input.CaHash, Context.Sender);
 
         var holderInfo = State.HolderInfoMap[input.CaHash];
+        Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
+        
         // if CAHolder only have one LoginGuardian,not Allow Unset;
-        Assert(holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Count > 1,
+        Assert(holderInfo.GuardiansInfo!.LoginGuardianAccountIndexes.Count > 1,
             "only one LoginGuardian,can not be Unset");
         var loginGuardianAccount = input.GuardianAccount;
         // Try to find the index of the GuardianAccount
@@ -91,7 +97,7 @@ public partial class CAContract
             return new Empty();
         }
 
-        if (State.LoginGuardianAccountMap[loginGuardianAccount.Value] == null
+        if (State.LoginGuardianAccountMap[loginGuardianAccount.Value][input.GuardianAccount.Guardian.Verifier.Id] == null
             || State.LoginGuardianAccountMap[loginGuardianAccount.Value][input.GuardianAccount.Guardian.Verifier.Id] !=
             input.CaHash)
         {

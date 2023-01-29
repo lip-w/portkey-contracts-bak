@@ -236,15 +236,13 @@ public partial class CAContractTests : CAContractTestBase
 
      }
 
-
-
-
-
-
-
      [Fact]
     public async Task CreateHolderTest_Fail_GuardianApproved_Null()
     {
+        await CaContractStub.Initialize.SendAsync(new InitializeInput
+        {
+            ContractAdmin = DefaultAddress
+        });
         var executionResult = await CaContractStub.CreateCAHolder.SendWithExceptionAsync(new CreateCAHolderInput
         {
             GuardianApproved = null,
@@ -260,6 +258,10 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task CreateHolderTest_Fail_GuardianType_Null()
     {
+        await CaContractStub.Initialize.SendAsync(new InitializeInput
+        {
+            ContractAdmin = DefaultAddress
+        });
         var verificationTime = DateTime.UtcNow;
         var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var executionResult = await CaContractStub.CreateCAHolder.SendWithExceptionAsync(new CreateCAHolderInput
@@ -287,6 +289,10 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task CreateHolderTest_Fail_Manager_Null()
     {
+        await CaContractStub.Initialize.SendAsync(new InitializeInput
+        {
+            ContractAdmin = DefaultAddress
+        });
         var verificationTime = DateTime.UtcNow;
         var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var executionResult = await CaContractStub.CreateCAHolder.SendWithExceptionAsync(new CreateCAHolderInput

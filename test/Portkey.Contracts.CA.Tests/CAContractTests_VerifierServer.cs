@@ -41,7 +41,7 @@ public partial class CAContractTests : CAContractTestBase
             Name = "test",
             EndPoints = { "127.0.0.1" }
         });
-        result.TransactionResult.Error.ShouldContain("Only Admin has permission to add VerifierServerEndPoints");
+        result.TransactionResult.Error.ShouldContain("No permission");
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public partial class CAContractTests : CAContractTestBase
         {
             Id = new Hash()
         });
-        result.TransactionResult.Error.ShouldContain("Only Admin has permission to remove VerifierServerEndPoints");
+        result.TransactionResult.Error.ShouldContain("No permission");
     }
 
     [Fact]
@@ -245,7 +245,7 @@ public partial class CAContractTests : CAContractTestBase
         {
             Id = new Hash()
         });
-        result.TransactionResult.Error.ShouldContain("Only Admin has permission to remove VerifierServer");
+        result.TransactionResult.Error.ShouldContain("No permission");
     }
     
     [Fact]

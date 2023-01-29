@@ -1331,7 +1331,7 @@ public partial class CAContractTests
                 },
                 GuardiansApproved = {guardianApprove}
             });
-            executionResult.TransactionResult.Error.ShouldContain("Inconsistent guardian type.");
+            executionResult.TransactionResult.Error.ShouldContain("Inconsistent guardian account.");
         }
         
         {
@@ -1481,7 +1481,7 @@ public partial class CAContractTests
             },
             GuardiansApproved = { guardianApprove }
         });
-        result.TransactionResult.Error.ShouldContain("Inconsistent guardian type.");
+        result.TransactionResult.Error.ShouldContain("Inconsistent guardian account.");
     }
      
      

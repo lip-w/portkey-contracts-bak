@@ -14,6 +14,8 @@ public partial class CAContract : CAContractContainer.CAContractBase
     {
         Assert(!State.Initialized.Value, "Already initialized.");
         State.Admin.Value = input.ContractAdmin ?? Context.Sender;
+        State.CreateControllers.Value = new ControllerList { Controllers = { input.ContractAdmin ?? Context.Sender } };
+        State.ServerControllers.Value = new ControllerList { Controllers = { input.ContractAdmin ?? Context.Sender} };
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
         State.MethodFeeController.Value = new AuthorityInfo
@@ -22,8 +24,6 @@ public partial class CAContract : CAContractContainer.CAContractBase
         };
         State.Initialized.Value = true;
 
-
-        
         return new Empty();
     }
 
@@ -35,6 +35,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
     public override Empty CreateCAHolder(CreateCAHolderInput input)
     {
         //Assert(Context.Sender == State.RegisterOrRecoveryController.Value,"No permission.");
+        Assert(State.CreateControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "Invalid input.");
         Assert(input!.GuardianApproved != null
                && !string.IsNullOrEmpty(input.GuardianApproved.Value),
