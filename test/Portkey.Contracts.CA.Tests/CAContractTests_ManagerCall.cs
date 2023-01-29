@@ -77,6 +77,12 @@ public partial class CAContractTests
     [Fact]
     public async Task ManagerFrowardCallTest_Failed_HolderNotExist()
     {
+        await TokenContractStub.Transfer.SendAsync(new TransferInput
+        {
+            Amount = 1000000000000,
+            Symbol = "ELF",
+            To = User1Address
+        });
         var input = new ManagerForwardCallInput
         {
             CaHash = HashHelper.ComputeFrom("AAA"),
