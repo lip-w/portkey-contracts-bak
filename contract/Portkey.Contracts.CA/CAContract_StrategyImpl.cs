@@ -26,18 +26,6 @@ public partial class CAContract
             get => StrategyName.Or;
         }
 
-        public override Strategy Parse(StrategyNode node)
-        {
-            object o = new object();
-
-
-            return new OrStrategy()
-            {
-                One = StrategyFactory.Create(ByteStringToNode(node.Value[0])),
-                Two = StrategyFactory.Create(ByteStringToNode(node.Value[0]))
-            };
-        }
-
         public override object Validate(IStrategyContext context)
         {
             return (bool)One.Validate(context) || (bool)Two.Validate(context);

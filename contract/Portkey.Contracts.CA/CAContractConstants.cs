@@ -27,5 +27,5 @@ public static class CAContractConstants
     public const long TenThousand = 10000;
 
     public const string ELFTokenSymbol = "ELF";
-    public const long CADelegationAmount = 10000000000;
+    public const long CADelegationAmount = 10000000000000000;
 }

@@ -41,7 +41,7 @@ public partial class CAContract
         Assert(isOccupied == CAContractConstants.LoginGuardianAccountIsNotOccupied,
             "Internal error, how can it be?");
         Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
-        if (!LoginGuardianAccountIsInGuardians(holderInfo.GuardiansInfo.GuardianAccounts, input.GuardianAccount))
+        if (!LoginGuardianAccountIsInGuardians(holderInfo.GuardiansInfo!.GuardianAccounts, input.GuardianAccount))
         {
             return new Empty();
         }
