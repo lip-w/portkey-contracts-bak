@@ -132,7 +132,7 @@ public partial class CAContractTests : CAContractTestBase
             DelegateeAddress = caInfo.CaAddress,
             DelegatorAddress = User2Address
         });
-        delegateAllowance.Delegations["ELF"].ShouldBe(10000000000L);
+        delegateAllowance.Delegations["ELF"].ShouldBe(10000000000000000L);
     }
 
     [Fact]
@@ -702,7 +702,7 @@ public partial class CAContractTests : CAContractTestBase
            DelegateeAddress = caInfo.CaAddress,
            DelegatorAddress = User2Address
        });
-       delegateAllowance.Delegations["ELF"].ShouldBe(10000000000L);
+       delegateAllowance.Delegations["ELF"].ShouldBe(10000000000000000L);
        caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
        {
            LoginGuardianAccount = GuardianAccount
