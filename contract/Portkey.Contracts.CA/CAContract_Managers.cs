@@ -64,7 +64,7 @@ public partial class CAContract
         Context.Fire(new ManagerSocialRecovered()
         {
             CaHash = caHash,
-            CaAddress = CalculateCaAddress(caHash),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(caHash),
             Manager = input.Manager.ManagerAddress,
             DeviceString = input.Manager.DeviceString
         });
@@ -82,6 +82,7 @@ public partial class CAContract
         
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
         
         // Manager exists
         if (holderInfo!.Managers.Contains(input.Manager))
@@ -95,7 +96,7 @@ public partial class CAContract
         Context.Fire(new ManagerAdded
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             Manager = input.Manager.ManagerAddress,
             DeviceString = input.Manager.DeviceString
         });
@@ -113,6 +114,7 @@ public partial class CAContract
 
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
         
         // Manager does not exist
         if (!holderInfo!.Managers.Contains(input.Manager))
@@ -126,7 +128,7 @@ public partial class CAContract
         Context.Fire(new ManagerRemoved
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             Manager = input.Manager.ManagerAddress,
             DeviceString = input.Manager.DeviceString
         });

@@ -93,7 +93,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         {
             Creator = Context.Sender,
             CaHash = holderId,
-            CaAddress = CalculateCaAddress(holderId),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
             Manager = input.Manager!.ManagerAddress,
             DeviceString = input.Manager.DeviceString
         });
@@ -101,7 +101,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         Context.Fire(new LoginGuardianAccountAdded
         {
             CaHash = holderId,
-            CaAddress = CalculateCaAddress(holderId),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
             LoginGuardianAccount = guardianAccount,
             Manager = input.Manager.ManagerAddress,
         });

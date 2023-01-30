@@ -55,7 +55,7 @@ public partial class CAContract
         Context.Fire(new LoginGuardianAccountAdded
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             LoginGuardianAccount = input.GuardianAccount,
             Manager = Context.Sender
         });
@@ -113,7 +113,7 @@ public partial class CAContract
         Context.Fire(new LoginGuardianAccountRemoved
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             LoginGuardianAccount = loginGuardianAccount,
             Manager = Context.Sender
         });
@@ -124,7 +124,7 @@ public partial class CAContract
             Context.Fire(new LoginGuardianAccountUnbound
             {
                 CaHash = input.CaHash,
-                CaAddress = CalculateCaAddress(input.CaHash),
+                CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
                 LoginGuardianAccount = loginGuardianAccount.Value,
                 Manager = Context.Sender
             });

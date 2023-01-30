@@ -74,7 +74,7 @@ public partial class CAContract
         Context.Fire(new GuardianAdded
         {
             CaHash = input.CaHash,
-            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash, Context.Self),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             GuardianAdded_ = guardianAdded
         });
         return new Empty();
@@ -148,7 +148,7 @@ public partial class CAContract
         Context.Fire(new GuardianRemoved
         {
             CaHash = input.CaHash,
-            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash, Context.Self),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             GuardianRemoved_ = toRemoveGuardian
         });
 
@@ -241,7 +241,7 @@ public partial class CAContract
         Context.Fire(new GuardianUpdated
         {
             CaHash = input.CaHash,
-            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash, Context.Self),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             GuardianUpdatedPre = preGuardian,
             GuardianUpdatedNew = existPreGuardian
         });

@@ -25,15 +25,10 @@ public partial class CAContract
         output.CaHash = caHash;
         output.Managers.AddRange(holderInfo?.Managers.Clone());
         
-        output.CaAddress = CalculateCaAddress(output.CaHash);
+        output.CaAddress = Context.ConvertVirtualAddressToContractAddress(output.CaHash);
         output.GuardiansInfo =
             holderInfo?.GuardiansInfo == null ? new GuardiansInfo() : holderInfo.GuardiansInfo.Clone();
 
         return output;
-    }
-
-    private Address CalculateCaAddress(Hash caHash)
-    {
-        return Address.FromPublicKey(Context.Self.Value.Concat(caHash.Value.ToByteArray().ComputeHash()).ToArray());
     }
 }

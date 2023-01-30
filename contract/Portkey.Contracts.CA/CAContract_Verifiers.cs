@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using AElf;
 using AElf.Sdk.CSharp;
@@ -97,26 +98,26 @@ public partial class CAContract
         {
             return new Empty();
         }
-
-        var isExist = false;
-        foreach (var endPoints in input.EndPoints!)
+        
+        var endPoints = new List<string>();
+        foreach (var endPoint in input.EndPoints!)
         {
-            if (server.EndPoints.Contains(endPoints))
+            if (server.EndPoints.Contains(endPoint))
             {
-                isExist = true;
-                server.EndPoints.Remove(endPoints);
+                server.EndPoints.Remove(endPoint);
+                endPoints.Add(endPoint);
             }
         }
 
         // Nothing removed
-        if (!isExist) return new Empty();
+        if (endPoints.Count == 0) return new Empty();
 
         Context.Fire(new VerifierServerEndPointsRemoved
         {
             VerifierServer = new VerifierServer
             {
                 Id = input.Id,
-                EndPoints = { server.EndPoints }
+                EndPoints = { endPoints }
             }
         });
 
