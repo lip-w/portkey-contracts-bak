@@ -1,7 +1,3 @@
-using System.Linq;
-using AElf;
-using AElf.Types;
-
 namespace Portkey.Contracts.CA;
 
 public partial class CAContract
@@ -24,7 +20,7 @@ public partial class CAContract
             $"Holder is not found");
         output.CaHash = caHash;
         output.Managers.AddRange(holderInfo?.Managers.Clone());
-        
+
         output.CaAddress = Context.ConvertVirtualAddressToContractAddress(output.CaHash);
         output.GuardiansInfo =
             holderInfo?.GuardiansInfo == null ? new GuardiansInfo() : holderInfo.GuardiansInfo.Clone();

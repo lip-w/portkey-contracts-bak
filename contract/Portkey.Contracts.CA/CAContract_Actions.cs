@@ -15,7 +15,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         Assert(!State.Initialized.Value, "Already initialized.");
         State.Admin.Value = input.ContractAdmin ?? Context.Sender;
         State.CreatorControllers.Value = new ControllerList { Controllers = { input.ContractAdmin ?? Context.Sender } };
-        State.ServerControllers.Value = new ControllerList { Controllers = { input.ContractAdmin ?? Context.Sender} };
+        State.ServerControllers.Value = new ControllerList { Controllers = { input.ContractAdmin ?? Context.Sender } };
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
         State.MethodFeeController.Value = new AuthorityInfo
@@ -67,7 +67,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
                 Type = input.GuardianApproved.Type,
                 Verifier = new Verifier
                 {
-                    Id = input.GuardianApproved.VerificationInfo.Id
+                    Id = input.GuardianApproved.VerificationInfo!.Id
                 }
             }
         };

@@ -34,7 +34,6 @@ public partial class CAContractState : ContractState
     public SingletonState<ControllerList> CreatorControllers { get; set; }
     public SingletonState<ControllerList> ServerControllers { get; set; }
 
-
     /// <summary>
     ///  Verifier list
     /// </summary>
@@ -45,8 +44,7 @@ public partial class CAContractState : ContractState
     /// only on MainChain
     /// </summary>
     public SingletonState<CAServerList> CaServerList { get; set; }
-    
-    
+
     public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
     public MappedState<string, MethodFees> TransactionFees { get; set; }
 }

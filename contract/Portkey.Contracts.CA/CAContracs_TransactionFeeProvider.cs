@@ -1,15 +1,13 @@
 using AElf.Sdk.CSharp;
 using AElf.Standards.ACS1;
-using AElf.Standards.ACS3;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
-using Org.BouncyCastle.Crypto.Agreement.Srp;
 
 namespace Portkey.Contracts.CA;
 
 public partial class CAContract
 {
-    public  override Empty SetMethodFee(MethodFees input)
+    public override Empty SetMethodFee(MethodFees input)
     {
         foreach (var methodFee in input.Fees) AssertValidToken(methodFee.Symbol, methodFee.BasicFee);
         Assert(Context.Sender == State.MethodFeeController.Value.OwnerAddress, "Unauthorized to set method fee.");
@@ -19,7 +17,7 @@ public partial class CAContract
 
     public override Empty ChangeMethodFeeController(AuthorityInfo input)
     {
-        Assert(input.OwnerAddress != null,"Invalid OwnerAddress.");
+        Assert(input.OwnerAddress != null, "Invalid OwnerAddress.");
         AssertSenderAddressWith(State.MethodFeeController.Value.OwnerAddress);
         State.MethodFeeController.Value = input;
         return new Empty();
@@ -27,22 +25,22 @@ public partial class CAContract
 
 
     public override MethodFees GetMethodFee(StringValue input)
-     {
-         return State.TransactionFees[input.Value];
-     }
-    
-     public override AuthorityInfo GetMethodFeeController(Empty input)
-     {
-         return State.MethodFeeController.Value;
-     }
-    
-    #region private methods
+    {
+        return State.TransactionFees[input.Value];
+    }
 
+    public override AuthorityInfo GetMethodFeeController(Empty input)
+    {
+        return State.MethodFeeController.Value;
+    }
+
+    #region private methods
 
     private void AssertSenderAddressWith(Address address)
     {
         Assert(Context.Sender == address, "Unauthorized behavior.");
     }
+
     private void AssertValidToken(string symbol, long amount)
     {
         Assert(amount >= 0, "Invalid amount.");
@@ -55,5 +53,4 @@ public partial class CAContract
     }
 
     #endregion
-    
 }

@@ -27,22 +27,22 @@ public partial class CAContract
 
         public static StrategyNode DefaultStrategy()
         {
-            return new CAContract.IfElseStrategy()
+            return new IfElseStrategy()
             {
-                IfCondition = new CAContract.NotLargerThanStrategy()
+                IfCondition = new NotLargerThanStrategy()
                 {
                     One = CAContractConstants.GuardianCount,
                     Two = 3
                 },
-                Than = new CAContract.NotLessThanStrategy()
+                Than = new NotLessThanStrategy()
                 {
                     One = CAContractConstants.GuardianApprovedCount,
                     Two = CAContractConstants.GuardianCount
                 },
-                Else = new CAContract.NotLessThanStrategy()
+                Else = new NotLessThanStrategy()
                 {
                     One = CAContractConstants.GuardianApprovedCount,
-                    Two = new CAContract.RatioOfCountCalculationStrategy()
+                    Two = new RatioOfCountCalculationStrategy()
                     {
                         One = CAContractConstants.GuardianCount,
                         Two = 6000

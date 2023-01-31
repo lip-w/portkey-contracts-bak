@@ -26,7 +26,7 @@ public partial class CAContract
         var caHash = State.GuardianAccountMap[loginGuardianAccount];
 
         Assert(caHash != null, "CA Holder does not exist.");
-        
+
         var holderInfo = State.HolderInfoMap[caHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {caHash}");
         Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {caHash}");
@@ -35,7 +35,7 @@ public partial class CAContract
         Assert(input.GuardiansApproved.Count > 0, "invalid input Guardians Approved");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -79,11 +79,11 @@ public partial class CAContract
         Assert(input != null, "invalid input");
         CheckManagerInput(input!.CaHash, input.Manager);
         //Assert(Context.Sender.Equals(input.Manager.ManagerAddress), "No permission to add");
-        
+
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
         Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
-        
+
         // Manager exists
         if (holderInfo!.Managers.Contains(input.Manager))
         {
@@ -115,7 +115,7 @@ public partial class CAContract
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
         Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
-        
+
         // Manager does not exist
         if (!holderInfo!.Managers.Contains(input.Manager))
         {

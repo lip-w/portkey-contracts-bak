@@ -98,7 +98,7 @@ public partial class CAContract
         {
             return new Empty();
         }
-        
+
         var endPoints = new List<string>();
         foreach (var endPoint in input.EndPoints!)
         {
