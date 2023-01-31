@@ -132,8 +132,7 @@ public partial class CAContract
 
         return new Empty();
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    
     private int CheckLoginGuardianIsNotOccupied(GuardianAccount guardianAccount, Hash caHash)
     {
         var result = State.LoginGuardianAccountMap[guardianAccount.Value][guardianAccount.Guardian.Verifier.Id];
@@ -146,8 +145,7 @@ public partial class CAContract
             ? CAContractConstants.LoginGuardianAccountIsYours
             : CAContractConstants.LoginGuardianAccountIsOccupiedByOthers;
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    
     private void FindGuardianAccountAndSet(GuardiansInfo guardiansInfo, GuardianAccount loginGuardianAccount)
     {
         var guardians = guardiansInfo.GuardianAccounts;
@@ -164,8 +162,7 @@ public partial class CAContract
             guardiansInfo.LoginGuardianAccountIndexes.Add(index);
         }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    
     private int FindGuardianAccount(RepeatedField<GuardianAccount> guardianAccounts,
         GuardianAccount loginGuardianAccount)
     {
