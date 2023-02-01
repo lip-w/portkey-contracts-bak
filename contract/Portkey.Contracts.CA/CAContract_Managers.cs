@@ -4,6 +4,7 @@ using AElf.Contracts.MultiToken;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 
 namespace Portkey.Contracts.CA;
@@ -53,10 +54,8 @@ public partial class CAContract
             holderInfo.JudgementStrategy);
 
         // Manager exists
-        if (holderInfo.Managers.Contains(input.Manager))
-        {
-            return new Empty();
-        }
+        Assert(!CheckManagerExists(holderInfo.Managers, input.Manager.ManagerAddress),
+            $"Manager address exists");
 
         State.HolderInfoMap[caHash].Managers.Add(input.Manager);
         SetDelegator(caHash, input.Manager);
@@ -85,10 +84,8 @@ public partial class CAContract
         Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
 
         // Manager exists
-        if (holderInfo!.Managers.Contains(input.Manager))
-        {
-            return new Empty();
-        }
+        Assert(!CheckManagerExists(holderInfo.Managers, input.Manager.ManagerAddress),
+            $"Manager address exists");
 
         holderInfo.Managers.Add(input.Manager);
         SetDelegator(input.CaHash, input.Manager);
@@ -115,9 +112,9 @@ public partial class CAContract
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
         Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
-
+        
         // Manager does not exist
-        if (!holderInfo!.Managers.Contains(input.Manager))
+        if (!CheckManagerExists(holderInfo!.Managers, input.Manager.ManagerAddress))
         {
             return new Empty();
         }
@@ -194,5 +191,12 @@ public partial class CAContract
     {
         Assert(State.HolderInfoMap[caHash] != null, $"CA holder is null.CA hash:{caHash}");
         Assert(State.HolderInfoMap[caHash].Managers.Any(m => m.ManagerAddress == managerAddress), "No permission.");
+    }
+
+    private bool CheckManagerExists(RepeatedField<Manager> managers, Address managerAddress)
+    {
+        var addresses = managers.Select(m => m.ManagerAddress).Distinct().ToList();
+
+        return addresses.Contains(managerAddress);
     }
 }

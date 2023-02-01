@@ -26,7 +26,7 @@ public partial class CAContract
         var isOccupied = CheckLoginGuardianIsNotOccupied(loginGuardian, input.CaHash);
 
         Assert(isOccupied != CAContractConstants.LoginGuardianAccountIsOccupiedByOthers,
-            $"The login guardian type --{loginGuardian.Value}-- is occupied by others!");
+            $"The login guardian account --{loginGuardian.Value}-- is occupied by others!");
 
         // for idempotent
         if (isOccupied == CAContractConstants.LoginGuardianAccountIsYours)
