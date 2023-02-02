@@ -83,6 +83,10 @@ service CAContract {
   rpc SyncHolderInfo (SyncHolderInfoInput) returns (google.protobuf.Empty) {}
 
   rpc ValidateStrategy (ValidateStrategyInput) returns (ValidateStrategyOutput) {option (aelf.is_view) = true;}
+  
+  rpc SetContractDelegationFee (SetContractDelegationFeeInput) returns (google.protobuf.Empty) {}
+  
+  rpc GetContractDelegationFee (google.protobuf.Empty) returns (GetContractDelegationFeeOutput) {}
 }
 
 //Data structure
@@ -202,6 +206,18 @@ message StrategyLongWrapper {
 
 message StrategyStringWrapper {
   string value = 1;
+}
+
+message ContractDelegationFee {
+  int64 amount = 1;
+}
+
+message SetContractDelegationFeeInput {
+  ContractDelegationFee delegation_fee = 1;
+}
+
+message GetContractDelegationFeeOutput {
+  ContractDelegationFee delegation_fee = 1;
 }
 
 message AddGuardianInput {

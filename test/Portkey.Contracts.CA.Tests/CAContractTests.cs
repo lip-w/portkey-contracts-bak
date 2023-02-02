@@ -425,6 +425,20 @@ public partial class CAContractTests : CAContractTestBase
 
      }*/
 
+     [Fact]
+     public async Task CreateHolderTest_Delegator()
+     {
+         await CreateHolderTest();
+         
+         var delegations = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(new GetTransactionFeeDelegationsOfADelegateeInput
+         {
+             DelegateeAddress = CaContractAddress,
+             DelegatorAddress = User1Address
+         });
+         
+         delegations.Delegations["ELF"].ShouldBe(100);
+     }
+
      private async Task<TransactionFeeDelegations> GetDelegator_ByCaHash_Helper(Hash caHash)
      {
          var hashCode = caHash.ToString();

@@ -60,6 +60,8 @@ public partial class CAContract
         State.HolderInfoMap[caHash].Managers.Add(input.Manager);
         SetDelegator(caHash, input.Manager);
 
+        SetContractDelegator(input.Manager);
+        
         Context.Fire(new ManagerSocialRecovered()
         {
             CaHash = caHash,
@@ -90,6 +92,8 @@ public partial class CAContract
         holderInfo.Managers.Add(input.Manager);
         SetDelegator(input.CaHash, input.Manager);
 
+        SetContractDelegator(input.Manager);
+        
         Context.Fire(new ManagerAdded
         {
             CaHash = input.CaHash,

@@ -41,8 +41,7 @@ public class CAContractTestBase : DAppContractTestBase<CAContractTestModule>
 
     protected Hash CaContractName => HashHelper.ComputeFrom("AElf.ContractNames.CA");
     protected Address CaContractAddress { get; set; }
-    
-    
+
     public CAContractTestBase()
     {
         CaContractAddress = GetAddress(CASmartContractAddressNameProvider.StringName);
@@ -71,6 +70,6 @@ public class CAContractTestBase : DAppContractTestBase<CAContractTestModule>
         return GetTester<TokenContractContainer.TokenContractStub>(TokenContractAddress,
             keyPair);
     }
-
+    
 
 }

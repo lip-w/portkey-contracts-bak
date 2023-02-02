@@ -89,6 +89,12 @@ public partial class CAContract
 
         holderInfo.Managers.AddRange(managersToAdd);
         SetDelegators(holderId, managersToAdd);
+
+        foreach (var manager in managersToAdd)
+        {
+            SetContractDelegator(manager);
+        }
+        
         foreach (var manager in managersToRemove)
         {
             holderInfo.Managers.Remove(manager);

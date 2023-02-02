@@ -131,6 +131,20 @@ public partial class CAContractTests : CAContractTestBase
             });
         delegateAllowance.Delegations["ELF"].ShouldBe(10000000000000000L);
     }
+    
+    [Fact]
+    public async Task SocialRecoveryTest_Delegator()
+    {
+        await SocialRecoveryTest();
+         
+        var delegations = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(new GetTransactionFeeDelegationsOfADelegateeInput
+        {
+            DelegateeAddress = CaContractAddress,
+            DelegatorAddress = User2Address
+        });
+         
+        delegations.Delegations["ELF"].ShouldBe(100);
+    }
 
     [Fact]
     public async Task SocialRecovery_StrategyTest()
@@ -584,7 +598,7 @@ public partial class CAContractTests : CAContractTestBase
                 }
             }
         };
-        await CaContractStub.SocialRecovery.SendAsync(new SocialRecoveryInput()
+        var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
             Manager = new Manager
             {
@@ -594,6 +608,7 @@ public partial class CAContractTests : CAContractTestBase
             LoginGuardianAccount = GuardianAccount,
             GuardiansApproved = { guardianApprove }
         });
+        result.TransactionResult.Error.ShouldContain("Manager address exists");
 
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
@@ -720,16 +735,6 @@ public partial class CAContractTests : CAContractTestBase
             LoginGuardianAccount = GuardianAccount
         });
         caInfo.Managers.ShouldContain(manager);
-        //manager already existed
-        var txResult = await CaContractUser1Stub.AddManager.SendAsync(new AddManagerInput()
-        {
-            CaHash = caInfo.CaHash,
-            Manager = new Manager()
-            {
-                ManagerAddress = User2Address,
-                DeviceString = "iphone14-2022"
-            }
-        });
 
         //caHolder not exist
         var notExistedCash = HashHelper.ComputeFrom("Invalid CaHash");
@@ -761,6 +766,20 @@ public partial class CAContractTests : CAContractTestBase
             CaHash = caInfo.CaHash
         });
         txExecutionResult.TransactionResult.Error.ShouldContain("invalid input manager");
+    }
+    
+    [Fact]
+    public async Task AddManager_Delegator()
+    {
+        await AddManagerTest();
+         
+        var delegations = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(new GetTransactionFeeDelegationsOfADelegateeInput
+        {
+            DelegateeAddress = CaContractAddress,
+            DelegatorAddress = User2Address
+        });
+         
+        delegations.Delegations["ELF"].ShouldBe(100);
     }
 
     [Fact]

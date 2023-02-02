@@ -54,7 +54,6 @@ public partial class CAContract : CAContractContainer.CAContractBase
 
         holderInfo.CreatorAddress = Context.Sender;
         holderInfo.Managers.Add(input.Manager);
-        SetDelegator(holderId, input.Manager);
 
         //Check verifier signature.
         Assert(CheckVerifierSignatureAndData(input.GuardianApproved), "Guardian verification failed.");
@@ -87,7 +86,11 @@ public partial class CAContract : CAContractContainer.CAContractBase
         State.HolderInfoMap[holderId] = holderInfo;
         State.GuardianAccountMap[guardianAccountValue] = holderId;
         State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo.Id] = holderId;
-
+        
+        SetDelegator(holderId, input.Manager);
+        
+        SetContractDelegator(input.Manager);
+        
         // Log Event
         Context.Fire(new CAHolderCreated
         {
@@ -170,5 +173,53 @@ public partial class CAContract : CAContractContainer.CAContractBase
         {
             RemoveDelegator(holderId, manager);
         }
+    }
+
+    private void SetContractDelegator(Manager manager)
+    {
+        // Todo Temporary, need delete later
+        if (State.ContractDelegationFee.Value == null)
+        {
+            State.ContractDelegationFee!.Value = new ContractDelegationFee
+            {
+                Amount = CAContractConstants.DefaultContractDelegationFee
+            };
+        }
+        
+        var delegations = new Dictionary<string, long>
+        {
+            [CAContractConstants.ELFTokenSymbol] = State.ContractDelegationFee!.Value.Amount
+        };
+        
+        State.TokenContract.SetTransactionFeeDelegations.Send(new SetTransactionFeeDelegationsInput
+        {
+            DelegatorAddress = manager.ManagerAddress,
+            Delegations =
+            {
+                delegations
+            }
+        });
+    }
+
+    public override Empty SetContractDelegationFee(SetContractDelegationFeeInput input)
+    {
+        Assert(input != null && input.DelegationFee != null, "invalid input");
+        Assert(input!.DelegationFee!.Amount >= 0, "input can not be less than 0");
+
+        if (State.ContractDelegationFee == null)
+        {
+            State.ContractDelegationFee!.Value = new ContractDelegationFee();
+        }
+        State.ContractDelegationFee.Value.Amount = input.DelegationFee.Amount;
+
+        return new Empty();
+    }
+
+    public override GetContractDelegationFeeOutput GetContractDelegationFee(Empty input)
+    {
+        return new GetContractDelegationFeeOutput
+        {
+            DelegationFee = State.ContractDelegationFee.Value
+        };
     }
 }
