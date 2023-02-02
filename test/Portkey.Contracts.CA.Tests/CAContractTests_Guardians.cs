@@ -6,13 +6,11 @@ using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.Cryptography;
 using AElf.Cryptography.ECDSA;
-using AElf.Kernel;
 using AElf.Types;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
 using Xunit;
-using Type = Google.Protobuf.WellKnownTypes.Type;
 
 namespace Portkey.Contracts.CA;
 
@@ -23,15 +21,15 @@ public partial class CAContractTests
     private const string GuardianAccount2 = "test2@google.com";
     private const string GuardianAccountNotExist = "NotExists@google.com";
     private const string VerifierName = "HuoBi";
-    private Hash verifierId;
+    private Hash _verifierId;
     private const string VerifierName1 = "PortKey";
-    private Hash verifierId1;
+    private Hash _verifierId1;
     private const string VerifierName2 = "Binance";
-    private Hash verifierId2;
+    private Hash _verifierId2;
     private const string ImageUrl = "https://portkey-did.s3.ap-northeast-1.amazonaws.com/img/Portkey.png";
-    
 
-    private async Task<ByteString> GenerateSignature(ECKeyPair verifier, Address verifierAddress,
+
+    private ByteString GenerateSignature(ECKeyPair verifier, Address verifierAddress,
         DateTime verificationTime, string guardianType, int type)
     {
         var data = $"{type},{guardianType},{verificationTime},{verifierAddress.ToBase58()}";
@@ -52,31 +50,31 @@ public partial class CAContractTests
             {
                 Name = VerifierName,
                 ImageUrl = ImageUrl,
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName1,
                 ImageUrl = ImageUrl,
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress1 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress1}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName2,
                 ImageUrl = ImageUrl,
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress2 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress2}
             });
         }
         {
             var verifierServers = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
-            verifierId = verifierServers.VerifierServers[0].Id;
-            verifierId1 = verifierServers.VerifierServers[1].Id;
-            verifierId2 = verifierServers.VerifierServers[2].Id;
+            _verifierId = verifierServers.VerifierServers[0].Id;
+            _verifierId1 = verifierServers.VerifierServers[1].Id;
+            _verifierId2 = verifierServers.VerifierServers[2].Id;
         }
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput
         {
             GuardianApproved = new GuardianAccountInfo
@@ -85,7 +83,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -101,7 +99,7 @@ public partial class CAContractTests
             LoginGuardianAccount = GuardianAccount
         });
         holderInfo.GuardiansInfo.GuardianAccounts.First().Value.ShouldBe(GuardianAccount);
-        
+
         //success
         var manager = new Manager
         {
@@ -122,8 +120,8 @@ public partial class CAContractTests
 
         return holderInfo.CaHash;
     }
-    
-        private async Task<Hash> CreateCAHolderNoPermission()
+
+    private async Task<Hash> CreateCAHolderNoPermission()
     {
         var verificationTime = DateTime.UtcNow;
         await CaContractStub.Initialize.SendAsync(new InitializeInput
@@ -135,31 +133,31 @@ public partial class CAContractTests
             {
                 Name = VerifierName,
                 ImageUrl = ImageUrl,
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName1,
                 ImageUrl = ImageUrl,
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress1 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress1}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName2,
                 ImageUrl = ImageUrl,
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress2 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress2}
             });
         }
         {
             var verifierServers = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
-            verifierId = verifierServers.VerifierServers[0].Id;
-            verifierId1 = verifierServers.VerifierServers[1].Id;
-            verifierId2 = verifierServers.VerifierServers[2].Id;
+            _verifierId = verifierServers.VerifierServers[0].Id;
+            _verifierId1 = verifierServers.VerifierServers[1].Id;
+            _verifierId2 = verifierServers.VerifierServers[2].Id;
         }
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput
         {
             GuardianApproved = new GuardianAccountInfo
@@ -168,7 +166,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -184,7 +182,7 @@ public partial class CAContractTests
             LoginGuardianAccount = GuardianAccount
         });
         holderInfo.GuardiansInfo.GuardianAccounts.First().Value.ShouldBe(GuardianAccount);
-        
+
         return holderInfo.CaHash;
     }
 
@@ -193,9 +191,9 @@ public partial class CAContractTests
     {
         var verificationTime = DateTime.UtcNow;
         var caHash = await CreateHolder();
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var verificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}";
         var guardianApprove = new List<GuardianAccountInfo>
         {
@@ -205,7 +203,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = verificationDoc
                 }
@@ -220,7 +218,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
                 }
@@ -235,21 +233,21 @@ public partial class CAContractTests
             });
             holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);
             holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);
+            holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
         }
         return caHash;
     }
-    
-    
+
 
     [Fact]
     public async Task<Hash> AddGuardianTest_RepeatedGuardianType_DifferentVerifier()
     {
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var signature2 =
-            await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
         var caHash = await AddGuardianTest();
         var guardianApprove = new List<GuardianAccountInfo>
         {
@@ -259,7 +257,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -270,7 +268,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
                 }
@@ -285,7 +283,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId2,
+                    Id = _verifierId2,
                     Signature = signature2,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress2.ToBase58()}"
                 }
@@ -300,7 +298,7 @@ public partial class CAContractTests
             });
             holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(3);
             holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);
-            holderInfo.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(verifierId2);
+            holderInfo.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(_verifierId2);
         }
         return caHash;
     }
@@ -310,14 +308,14 @@ public partial class CAContractTests
     {
         var caHash = await AddGuardian();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var signature2 =
-            await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
-        var signature3 = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount2, 0);
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+        var signature3 = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount2, 0);
         var signature4 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount2, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount2, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -326,7 +324,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -337,7 +335,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
                 }
@@ -348,7 +346,7 @@ public partial class CAContractTests
                 Value = GuardianAccount2,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature3,
                     VerificationDoc = $"{0},{GuardianAccount2},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -363,7 +361,7 @@ public partial class CAContractTests
                 Value = GuardianAccount2,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature4,
                     VerificationDoc = $"{0},{GuardianAccount2},{verificationTime},{VerifierAddress1.ToBase58()}"
                 }
@@ -378,7 +376,7 @@ public partial class CAContractTests
             });
             holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(5);
             holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount2);
-            holderInfo.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(verifierId1);
+            holderInfo.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(_verifierId1);
         }
         return caHash;
     }
@@ -387,12 +385,12 @@ public partial class CAContractTests
     {
         var caHash = await AddGuardianTest_RepeatedGuardianType_DifferentVerifier();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var signature2 =
-            await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
-        var signature3 = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount2, 0);
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+        var signature3 = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount2, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -401,7 +399,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -412,7 +410,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
                 }
@@ -423,7 +421,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId2,
+                    Id = _verifierId2,
                     Signature = signature2,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress2.ToBase58()}"
                 }
@@ -438,7 +436,7 @@ public partial class CAContractTests
                 Value = GuardianAccount2,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature3,
                     VerificationDoc = $"{0},{GuardianAccount2},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -453,7 +451,7 @@ public partial class CAContractTests
             });
             holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(4);
             holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount2);
-            holderInfo.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(verifierId);
+            holderInfo.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(_verifierId);
         }
         return caHash;
     }
@@ -463,13 +461,13 @@ public partial class CAContractTests
     // {
     //     var caHash = await AddGuardian();
     //     var verificationTime = DateTime.UtcNow;
-    //     var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianType, 0);
+    //     var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianType, 0);
     //     var signature1 =
-    //         await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianType1, 0);
+    //         GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianType1, 0);
     //     var signature2 =
-    //         await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianType1, 0);
+    //         GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianType1, 0);
     //     var signature4 =
-    //         await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianType2, 0);
+    //         GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianType2, 0);
     //     var guardianApprove = new List<Guardian>
     //     {
     //         new Guardian
@@ -529,9 +527,9 @@ public partial class CAContractTests
     {
         var caHash = await CreateHolder();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -540,7 +538,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -555,7 +553,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
                 }
@@ -571,9 +569,9 @@ public partial class CAContractTests
     {
         var caHash = await CreateHolder();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -582,7 +580,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -597,7 +595,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -613,10 +611,10 @@ public partial class CAContractTests
     {
         var caHash = await AddGuardianTest();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
-        
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+
         {
             var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
             {
@@ -634,7 +632,7 @@ public partial class CAContractTests
                     Value = GuardianAccount,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId,
+                        Id = _verifierId,
                         Signature = signature,
                         VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                     }
@@ -649,7 +647,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                         Signature = signature1,
                         VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress.ToBase58()}"
                     }
@@ -672,9 +670,9 @@ public partial class CAContractTests
     public async Task AddGuardianTest_Failed_HolderNotExist()
     {
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -683,7 +681,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                     Signature = signature
                 }
@@ -698,7 +696,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress.ToBase58()}",
                     Signature = signature1
                 }
@@ -716,9 +714,9 @@ public partial class CAContractTests
     {
         var caHash = await CreateHolder();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -727,7 +725,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
@@ -742,7 +740,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                         Signature = signature1,
                         VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress.ToBase58()}",
                     }
@@ -775,7 +773,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                         Signature = signature1,
                         VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress.ToBase58()}",
                     }
@@ -786,13 +784,14 @@ public partial class CAContractTests
     }
 
     [Fact]
-    public async Task<Hash> RemoveGuardianTest()
+    public async Task AddGuardian_failed_for_guardianNotExits()
     {
-        var caHash = await AddGuardianTest();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var caHash = await CreateHolder();
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -801,7 +800,50 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId1,
+                    Signature = signature1,
+                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress1.ToBase58()}"
+                }
+            }
+        };
+        var input = new AddGuardianInput
+        {
+            CaHash = caHash,
+            GuardianToAdd = new GuardianAccountInfo
+            {
+                Type = GuardianType.OfEmail,
+                Value = GuardianAccount1,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId1,
+                    Signature = signature1,
+                    VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
+                }
+            },
+            GuardiansApproved = {guardianApprove}
+        };
+        var result = await CaContractStub.AddGuardian.SendWithExceptionAsync(input);
+        result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
+    }
+
+    [Fact]
+    public async Task<Hash> RemoveGuardianTest()
+    {
+        var caHash = await AddGuardianTest();
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature1 =
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+        var guardianApprove = new List<GuardianAccountInfo>
+        {
+            new GuardianAccountInfo
+            {
+                Type = GuardianType.OfEmail,
+                Value = GuardianAccount,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
@@ -824,7 +866,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1
+                    Id = _verifierId1
                 }
             },
             GuardiansApproved = {guardianApprove}
@@ -839,17 +881,17 @@ public partial class CAContractTests
         }
         return caHash;
     }
-    
-    
-    
+
+
     [Fact]
     public async Task RemoveGuardian_failed_guardianNotExits()
     {
         var caHash = await AddGuardianTest();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -858,13 +900,13 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
             }
         };
-        
+
         var result = await CaContractStub.RemoveGuardian.SendWithExceptionAsync(new RemoveGuardianInput
         {
             CaHash = caHash,
@@ -874,7 +916,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1
+                    Id = _verifierId1
                 }
             },
             GuardiansApproved = {guardianApprove}
@@ -886,10 +928,11 @@ public partial class CAContractTests
     public async Task RemoveGuardianTest_AlreadyRemoved()
     {
         var caHash = await RemoveGuardianTest();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -898,7 +941,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress1.ToBase58()}",
                 }
@@ -921,7 +964,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}",
                 }
@@ -941,10 +984,11 @@ public partial class CAContractTests
     [Fact]
     public async Task RemoveGuardianTest_Failed_HolderNotExist()
     {
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -953,7 +997,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress1.ToBase58()}",
                 }
@@ -968,7 +1012,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}",
                 }
@@ -985,10 +1029,11 @@ public partial class CAContractTests
     public async Task RemoveGuardianTest_Failed_InvalidInput()
     {
         var caHash = await CreateHolder();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount1, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var guardianApprove = new List<GuardianAccountInfo>
         {
             new GuardianAccountInfo
@@ -997,7 +1042,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
@@ -1012,7 +1057,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1
+                        Id = _verifierId1
                     }
                 },
                 GuardiansApproved =
@@ -1043,7 +1088,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1
+                        Id = _verifierId1
                     }
                 }
             });
@@ -1052,15 +1097,234 @@ public partial class CAContractTests
     }
 
     [Fact]
+    public async Task RemoveGuardianTest_Failed_LastLoginGuardian()
+    {
+        var caHash = await AddGuardianTest_RepeatedGuardianType_DifferentVerifier();
+        var verificationTime = DateTime.UtcNow;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature1 =
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+        var signature2 =
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+        List<GuardianAccountInfo> guardianApprove;
+        {
+            guardianApprove = new List<GuardianAccountInfo>
+            {
+                new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId,
+                        Signature = signature,
+                        VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
+                    }
+                },
+                new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId2,
+                        Signature = signature2,
+                        VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress2.ToBase58()}",
+                    }
+                }
+            };
+            await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+            {
+                CaHash = caHash,
+                GuardianAccount = new GuardianAccount
+                {
+                    Value = GuardianAccount1,
+                    Guardian = new Guardian
+                    {
+                        Type = GuardianType.OfEmail,
+                        Verifier = new Verifier
+                        {
+                            Id = _verifierId1
+                        }
+                    }
+                }
+            });
+            var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+            {
+                CaHash = caHash
+            });
+            holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
+            var executionResult = await CaContractStub.RemoveGuardian.SendWithExceptionAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId1
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            executionResult.TransactionResult.Error.ShouldContain("Cannot remove a Guardian for login, to remove it, unset it first.");
+            await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+            {
+                CaHash = caHash,
+                GuardianAccount = new GuardianAccount
+                {
+                    Value = GuardianAccount1,
+                    Guardian = new Guardian
+                    {
+                        Type = GuardianType.OfEmail,
+                        Verifier = new Verifier
+                        {
+                            Id = _verifierId2
+                        }
+                    }
+                }
+            });
+            await CaContractStub.RemoveGuardian.SendAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId1
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            var executionResult1 = await CaContractStub.RemoveGuardian.SendWithExceptionAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId2
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            executionResult1.TransactionResult.Error.ShouldContain("Cannot remove a Guardian for login, to remove it, unset it first.");
+            holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+            {
+                CaHash = caHash
+            });
+            holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);
+            await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(new UnsetGuardianAccountForLoginInput
+            {
+                CaHash = caHash,
+                GuardianAccount = new GuardianAccount
+                {
+                    Value = GuardianAccount1,
+                    Guardian = new Guardian
+                    {
+                        Type = GuardianType.OfEmail,
+                        Verifier = new Verifier
+                        {
+                            Id = _verifierId2
+                        }
+                    }
+                }
+            });
+            guardianApprove = new List<GuardianAccountInfo>
+            {
+                new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId,
+                        Signature = signature,
+                        VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
+                    }
+                }
+            };
+            await CaContractStub.RemoveGuardian.SendAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId2
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+            {
+                CaHash = caHash
+            });
+            holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(1);
+        }
+        {
+            guardianApprove = new List<GuardianAccountInfo>
+            {
+                new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId1,
+                        Signature = signature1,
+                        VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}",
+                    }
+                },
+                new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId2,
+                        Signature = signature2,
+                        VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress2.ToBase58()}",
+                    }
+                }
+            };
+            var exception = await CaContractStub.RemoveGuardian.SendWithExceptionAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            exception.TransactionResult.Error.ShouldContain(
+                "Cannot remove a Guardian for login, to remove it, unset it first.");
+        }
+    }
+
+    [Fact]
     public async Task UpdateGuardianTest()
     {
         var caHash = await AddGuardianTest();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var signature2 =
-            await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
 
         var guardianApprove = new List<GuardianAccountInfo>
         {
@@ -1070,7 +1334,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
@@ -1081,7 +1345,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
@@ -1092,23 +1356,23 @@ public partial class CAContractTests
             CaHash = caHash,
             GuardianToUpdatePre = new GuardianAccountInfo
             {
-            Type = GuardianType.OfEmail,
-            Value = GuardianAccount1,
-            VerificationInfo = new VerificationInfo
-            {
-                Id = verifierId1
-            }
-        },
+                Type = GuardianType.OfEmail,
+                Value = GuardianAccount1,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId1
+                }
+            },
             GuardianToUpdateNew = new GuardianAccountInfo
             {
                 Type = GuardianType.OfEmail,
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId2
+                    Id = _verifierId2
                 }
             },
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         {
             var guardian = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
@@ -1117,7 +1381,7 @@ public partial class CAContractTests
             });
             guardian.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);
             guardian.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);
-            guardian.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(verifierId2);
+            guardian.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(_verifierId2);
         }
     }
 
@@ -1125,12 +1389,13 @@ public partial class CAContractTests
     public async Task UpdateGuardianTest_AlreadyExist()
     {
         var caHash = await AddGuardianTest_RepeatedGuardianType_DifferentVerifier();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var signature2 =
-            await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
 
         var guardianApprove = new List<GuardianAccountInfo>
         {
@@ -1140,7 +1405,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
@@ -1151,7 +1416,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}",
                 }
@@ -1162,7 +1427,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId2,
+                    Id = _verifierId2,
                     Signature = signature2,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress2.ToBase58()}",
                 }
@@ -1177,7 +1442,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                 }
             },
             GuardianToUpdateNew = new GuardianAccountInfo
@@ -1186,10 +1451,10 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId2
+                    Id = _verifierId2
                 }
             },
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         {
             var guardian = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
@@ -1198,9 +1463,9 @@ public partial class CAContractTests
             });
             guardian.GuardiansInfo.GuardianAccounts.Count.ShouldBe(3);
             guardian.GuardiansInfo.GuardianAccounts[1].Value.ShouldBe(GuardianAccount1);
-            guardian.GuardiansInfo.GuardianAccounts[1].Guardian.Verifier.Id.ShouldBe(verifierId1);
+            guardian.GuardiansInfo.GuardianAccounts[1].Guardian.Verifier.Id.ShouldBe(_verifierId1);
             guardian.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);
-            guardian.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(verifierId2);
+            guardian.GuardiansInfo.GuardianAccounts.Last().Guardian.Verifier.Id.ShouldBe(_verifierId2);
         }
     }
 
@@ -1208,12 +1473,13 @@ public partial class CAContractTests
     public async Task UpdateGuardianTest_Failed_InvalidInput()
     {
         var caHash = await AddGuardianTest();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var signature2 =
-            await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
 
         var guardianApprove = new List<GuardianAccountInfo>
         {
@@ -1223,7 +1489,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
                 }
@@ -1234,7 +1500,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}",
                 }
@@ -1249,7 +1515,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                     }
                 },
                 GuardianToUpdateNew = new GuardianAccountInfo
@@ -1258,7 +1524,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId2
+                        Id = _verifierId2
                     }
                 },
                 GuardiansApproved = {guardianApprove}
@@ -1275,7 +1541,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId2
+                        Id = _verifierId2
                     }
                 },
                 GuardiansApproved = {guardianApprove}
@@ -1292,7 +1558,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                     }
                 },
                 GuardianToUpdateNew = new GuardianAccountInfo
@@ -1301,7 +1567,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId2
+                        Id = _verifierId2
                     }
                 },
             });
@@ -1317,7 +1583,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                     }
                 },
                 GuardianToUpdateNew = new GuardianAccountInfo
@@ -1326,14 +1592,14 @@ public partial class CAContractTests
                     Value = GuardianAccount,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId2
+                        Id = _verifierId2
                     }
                 },
                 GuardiansApproved = {guardianApprove}
             });
             executionResult.TransactionResult.Error.ShouldContain("Inconsistent guardian account.");
         }
-        
+
         {
             var executionResult = await CaContractStub.UpdateGuardian.SendWithExceptionAsync(new UpdateGuardianInput
             {
@@ -1344,7 +1610,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                     }
                 },
                 GuardiansApproved = {guardianApprove}
@@ -1361,7 +1627,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId1,
+                        Id = _verifierId1,
                     }
                 },
                 GuardianToUpdateNew = new GuardianAccountInfo
@@ -1370,7 +1636,7 @@ public partial class CAContractTests
                     Value = GuardianAccount1,
                     VerificationInfo = new VerificationInfo
                     {
-                        Id = verifierId2
+                        Id = _verifierId2
                     }
                 },
                 GuardiansApproved = {guardianApprove}
@@ -1378,60 +1644,18 @@ public partial class CAContractTests
             executionResult.TransactionResult.Error.ShouldContain("CA holder does not exist.");
         }
     }
-    
-    [Fact]
-     public async Task AddGuardian_failed_for_guardianNotExits()
-    {
-        var verificationTime = DateTime.UtcNow;;
-        var caHash = await CreateHolder();
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
-        var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
-        var guardianApprove = new List<GuardianAccountInfo>
-        {
-            new GuardianAccountInfo
-            {
-                Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
-                VerificationInfo = new VerificationInfo
-                {
-                    Id = verifierId1,
-                    Signature = signature1,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress1.ToBase58()}"
-                }
-            }
-        };
-        var input = new AddGuardianInput
-        {
-            CaHash = caHash,
-            GuardianToAdd = new GuardianAccountInfo
-            {
-                Type = GuardianType.OfEmail,
-                Value = GuardianAccount1,
-                VerificationInfo = new VerificationInfo
-                {
-                    Id = verifierId1,
-                    Signature = signature1,
-                    VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
-                }
-            },
-            GuardiansApproved = {guardianApprove}
-        };
-        var result = await CaContractStub.AddGuardian.SendWithExceptionAsync(input);
-        result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
-    }
-     
-     
+
     [Fact]
     public async Task UpdateGuardian_GuardianTypeDiff_Test()
     {
         var caHash = await AddGuardianTest();
-        var verificationTime = DateTime.UtcNow;;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var verificationTime = DateTime.UtcNow;
+        ;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var signature1 =
-            await GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
         var signature2 =
-            await GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount1, 0);
 
         var guardianApprove = new List<GuardianAccountInfo>
         {
@@ -1441,7 +1665,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId,
+                    Id = _verifierId,
                     Signature = signature,
                     VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
                 }
@@ -1452,7 +1676,7 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1,
+                    Id = _verifierId1,
                     Signature = signature1,
                     VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
                 }
@@ -1467,7 +1691,7 @@ public partial class CAContractTests
                 Value = GuardianAccount,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId1
+                    Id = _verifierId1
                 }
             },
             GuardianToUpdateNew = new GuardianAccountInfo
@@ -1476,15 +1700,11 @@ public partial class CAContractTests
                 Value = GuardianAccount1,
                 VerificationInfo = new VerificationInfo
                 {
-                    Id = verifierId2
+                    Id = _verifierId2
                 }
             },
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         result.TransactionResult.Error.ShouldContain("Inconsistent guardian account.");
     }
-     
-     
-
-    
 }

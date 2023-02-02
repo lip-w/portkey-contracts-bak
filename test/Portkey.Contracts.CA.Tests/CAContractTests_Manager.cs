@@ -24,32 +24,32 @@ public partial class CAContractTests : CAContractTestBase
             {
                 Name = VerifierName,
                 ImageUrl = "url",
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName1,
                 ImageUrl = "url",
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress1 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress1}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName2,
                 ImageUrl = "url",
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress2 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress2}
             });
         }
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         {
             var verifierServers = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
-            verifierId = verifierServers.VerifierServers[0].Id;
-            verifierId1 = verifierServers.VerifierServers[1].Id;
-            verifierId2 = verifierServers.VerifierServers[2].Id;
+            _verifierId = verifierServers.VerifierServers[0].Id;
+            _verifierId1 = verifierServers.VerifierServers[1].Id;
+            _verifierId2 = verifierServers.VerifierServers[2].Id;
         }
         await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput
         {
@@ -87,7 +87,7 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var guardianApprove = new List<GuardianAccountInfo>
@@ -113,7 +113,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
 
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
@@ -156,7 +156,7 @@ public partial class CAContractTests : CAContractTestBase
         });
 
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var guardianApprove = new List<GuardianAccountInfo>
@@ -182,7 +182,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -200,7 +200,7 @@ public partial class CAContractTests : CAContractTestBase
         await CaContractStub.RemoveVerifierServer.SendAsync(input);
 
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
 
         var guardianApprove = new List<GuardianAccountInfo>
         {
@@ -225,7 +225,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -235,7 +235,7 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var guardianApprove = new List<GuardianAccountInfo>
@@ -261,7 +261,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
@@ -287,7 +287,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove1 }
+            GuardiansApproved = {guardianApprove1}
         });
         executionResult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -297,7 +297,7 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var guardianApprove = new List<GuardianAccountInfo>
@@ -323,11 +323,11 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         result.TransactionResult.Error.ShouldContain("Manager address exists");
     }
-    
+
     [Fact]
     public async Task SocialRecovery_FailedTest()
     {
@@ -335,9 +335,8 @@ public partial class CAContractTests : CAContractTestBase
         var expiredVerificationTime = DateTime.UtcNow.AddHours(-10);
         var verificationTime = DateTime.UtcNow;
         var signature =
-            await GenerateSignature(VerifierKeyPair, VerifierAddress, expiredVerificationTime, GuardianAccount, 0);
-        var signature1 =
-            await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+            GenerateSignature(VerifierKeyPair, VerifierAddress, expiredVerificationTime, GuardianAccount, 0);
+        var signature1 = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var id2 = verifierServer.VerifierServers[1].Id;
@@ -365,7 +364,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
@@ -393,7 +392,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove1 }
+            GuardiansApproved = {guardianApprove1}
         });
         executionResult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
@@ -421,7 +420,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove2 }
+            GuardiansApproved = {guardianApprove2}
         });
         exeRsult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
@@ -448,7 +447,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove3 }
+            GuardiansApproved = {guardianApprove3}
         });
         eresult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder：guardianCount");
 
@@ -475,7 +474,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "567"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove4 }
+            GuardiansApproved = {guardianApprove4}
         });
         inputResult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -486,7 +485,7 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var guardianApprove = new List<GuardianAccountInfo>
@@ -581,7 +580,7 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var guardianApprove = new List<GuardianAccountInfo>
@@ -606,7 +605,7 @@ public partial class CAContractTests : CAContractTestBase
                 DeviceString = "123"
             },
             LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = { guardianApprove }
+            GuardiansApproved = {guardianApprove}
         });
         result.TransactionResult.Error.ShouldContain("Manager address exists");
 
@@ -1056,25 +1055,25 @@ public partial class CAContractTests : CAContractTestBase
             {
                 Name = VerifierName,
                 ImageUrl = "url",
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName1,
                 ImageUrl = "url",
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress1 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress1}
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName2,
                 ImageUrl = "url",
-                EndPoints = { "127.0.0.1" },
-                VerifierAddressList = { VerifierAddress2 }
+                EndPoints = {"127.0.0.1"},
+                VerifierAddressList = {VerifierAddress2}
             });
         }
-        var signature = await GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput

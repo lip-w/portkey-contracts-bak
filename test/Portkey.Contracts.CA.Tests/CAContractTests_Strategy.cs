@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Shouldly;
 using Xunit;
@@ -25,9 +24,8 @@ public partial class CAContractTests : CAContractTestBase
         };
 
         var output = await CaContractStub.ValidateStrategy.SendAsync(input);
-        
+
         output.Output.BoolResult.ShouldBeTrue();
         //output.Output.StrategyOutput.Name.ShouldBeEquivalentTo(StrategyName.IfElse);
-
-    } 
+    }
 }
