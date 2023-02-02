@@ -1154,6 +1154,37 @@ public partial class CAContractTests
                 CaHash = caHash
             });
             holderInfo.GuardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
+            var executionResult = await CaContractStub.RemoveGuardian.SendWithExceptionAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId1
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            executionResult.TransactionResult.Error.ShouldContain("Cannot remove a Guardian for login, to remove it, unset it first.");
+            await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+            {
+                CaHash = caHash,
+                GuardianAccount = new GuardianAccount
+                {
+                    Value = GuardianAccount1,
+                    Guardian = new Guardian
+                    {
+                        Type = GuardianType.OfEmail,
+                        Verifier = new Verifier
+                        {
+                            Id = _verifierId2
+                        }
+                    }
+                }
+            });
             await CaContractStub.RemoveGuardian.SendAsync(new RemoveGuardianInput
             {
                 CaHash = caHash,
@@ -1168,10 +1199,90 @@ public partial class CAContractTests
                 },
                 GuardiansApproved = {guardianApprove}
             });
+            var executionResult1 = await CaContractStub.RemoveGuardian.SendWithExceptionAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId2
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            executionResult1.TransactionResult.Error.ShouldContain("Cannot remove a Guardian for login, to remove it, unset it first.");
+            holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+            {
+                CaHash = caHash
+            });
+            holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);
+            await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(new UnsetGuardianAccountForLoginInput
+            {
+                CaHash = caHash,
+                GuardianAccount = new GuardianAccount
+                {
+                    Value = GuardianAccount1,
+                    Guardian = new Guardian
+                    {
+                        Type = GuardianType.OfEmail,
+                        Verifier = new Verifier
+                        {
+                            Id = _verifierId2
+                        }
+                    }
+                }
+            });
+            guardianApprove = new List<GuardianAccountInfo>
+            {
+                new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId,
+                        Signature = signature,
+                        VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}",
+                    }
+                }
+            };
+            await CaContractStub.RemoveGuardian.SendAsync(new RemoveGuardianInput
+            {
+                CaHash = caHash,
+                GuardianToRemove = new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId2
+                    }
+                },
+                GuardiansApproved = {guardianApprove}
+            });
+            holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+            {
+                CaHash = caHash
+            });
+            holderInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(1);
         }
         {
             guardianApprove = new List<GuardianAccountInfo>
             {
+                new GuardianAccountInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    Value = GuardianAccount1,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId1,
+                        Signature = signature1,
+                        VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}",
+                    }
+                },
                 new GuardianAccountInfo
                 {
                     Type = GuardianType.OfEmail,

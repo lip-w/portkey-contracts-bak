@@ -107,8 +107,9 @@ public partial class CAContract
         //   If the guardianAccount to be removed is a loginGuardianAccount, ...
         if (loginGuardianAccount.Contains(toRemoveGuardian))
         {
+            var loginGuardianAccountCount = loginGuardianAccount.Count(g => g.Value == toRemoveGuardian.Value);
             //   and it is the only one, refuse. If you really wanna to remove it, unset it first.
-            Assert(loginGuardianAccount.Count > 1,
+            Assert(loginGuardianAccountCount > 1,
                 $"Cannot remove a Guardian for login, to remove it, unset it first. {input.GuardianToRemove?.Value} is a guardian account for login.");
         }
 
