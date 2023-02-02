@@ -203,6 +203,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
 
     public override Empty SetContractDelegationFee(SetContractDelegationFeeInput input)
     {
+        Assert(State.Admin.Value == Context.Sender, "No permission");
         Assert(input != null && input.DelegationFee != null, "invalid input");
         Assert(input!.DelegationFee!.Amount >= 0, "input can not be less than 0");
 
