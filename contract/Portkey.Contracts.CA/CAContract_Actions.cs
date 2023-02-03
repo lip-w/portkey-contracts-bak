@@ -14,9 +14,16 @@ public partial class CAContract : CAContractContainer.CAContractBase
     {
         Assert(!State.Initialized.Value, "Already initialized.");
         State.Admin.Value = input.ContractAdmin ?? Context.Sender;
+        State.CreatorControllers.Value = new ControllerList { Controllers = { input.ContractAdmin ?? Context.Sender } };
+        State.ServerControllers.Value = new ControllerList { Controllers = { input.ContractAdmin ?? Context.Sender } };
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
+        State.MethodFeeController.Value = new AuthorityInfo
+        {
+            OwnerAddress = Context.Sender
+        };
         State.Initialized.Value = true;
+
         return new Empty();
     }
 
@@ -28,6 +35,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
     public override Empty CreateCAHolder(CreateCAHolderInput input)
     {
         //Assert(Context.Sender == State.RegisterOrRecoveryController.Value,"No permission.");
+        Assert(State.CreatorControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "Invalid input.");
         Assert(input!.GuardianApproved != null
                && !string.IsNullOrEmpty(input.GuardianApproved.Value),
@@ -46,7 +54,6 @@ public partial class CAContract : CAContractContainer.CAContractBase
 
         holderInfo.CreatorAddress = Context.Sender;
         holderInfo.Managers.Add(input.Manager);
-        SetDelegator(holderId, input.Manager);
 
         //Check verifier signature.
         Assert(CheckVerifierSignatureAndData(input.GuardianApproved), "Guardian verification failed.");
@@ -59,7 +66,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
                 Type = input.GuardianApproved.Type,
                 Verifier = new Verifier
                 {
-                    Id = input.GuardianApproved.VerificationInfo.Id
+                    Id = input.GuardianApproved.VerificationInfo!.Id
                 }
             }
         };
@@ -79,13 +86,17 @@ public partial class CAContract : CAContractContainer.CAContractBase
         State.HolderInfoMap[holderId] = holderInfo;
         State.GuardianAccountMap[guardianAccountValue] = holderId;
         State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo.Id] = holderId;
-
+        
+        SetDelegator(holderId, input.Manager);
+        
+        SetContractDelegator(input.Manager);
+        
         // Log Event
         Context.Fire(new CAHolderCreated
         {
             Creator = Context.Sender,
             CaHash = holderId,
-            CaAddress = CalculateCaAddress(holderId),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
             Manager = input.Manager!.ManagerAddress,
             DeviceString = input.Manager.DeviceString
         });
@@ -93,7 +104,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         Context.Fire(new LoginGuardianAccountAdded
         {
             CaHash = holderId,
-            CaAddress = CalculateCaAddress(holderId),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
             LoginGuardianAccount = guardianAccount,
             Manager = input.Manager.ManagerAddress,
         });
@@ -162,5 +173,54 @@ public partial class CAContract : CAContractContainer.CAContractBase
         {
             RemoveDelegator(holderId, manager);
         }
+    }
+
+    private void SetContractDelegator(Manager manager)
+    {
+        // Todo Temporary, need delete later
+        if (State.ContractDelegationFee.Value == null)
+        {
+            State.ContractDelegationFee!.Value = new ContractDelegationFee
+            {
+                Amount = CAContractConstants.DefaultContractDelegationFee
+            };
+        }
+        
+        var delegations = new Dictionary<string, long>
+        {
+            [CAContractConstants.ELFTokenSymbol] = State.ContractDelegationFee!.Value.Amount
+        };
+        
+        State.TokenContract.SetTransactionFeeDelegations.Send(new SetTransactionFeeDelegationsInput
+        {
+            DelegatorAddress = manager.ManagerAddress,
+            Delegations =
+            {
+                delegations
+            }
+        });
+    }
+
+    public override Empty SetContractDelegationFee(SetContractDelegationFeeInput input)
+    {
+        Assert(State.Admin.Value == Context.Sender, "No permission");
+        Assert(input != null && input.DelegationFee != null, "invalid input");
+        Assert(input!.DelegationFee!.Amount >= 0, "input can not be less than 0");
+
+        if (State.ContractDelegationFee == null)
+        {
+            State.ContractDelegationFee!.Value = new ContractDelegationFee();
+        }
+        State.ContractDelegationFee.Value.Amount = input.DelegationFee.Amount;
+
+        return new Empty();
+    }
+
+    public override GetContractDelegationFeeOutput GetContractDelegationFee(Empty input)
+    {
+        return new GetContractDelegationFeeOutput
+        {
+            DelegationFee = State.ContractDelegationFee.Value
+        };
     }
 }

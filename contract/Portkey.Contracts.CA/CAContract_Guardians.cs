@@ -34,7 +34,7 @@ public partial class CAContract
         Assert(CheckVerifierSignatureAndData(input.GuardianToAdd), "Guardian to add verification failed.");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -74,7 +74,7 @@ public partial class CAContract
         Context.Fire(new GuardianAdded
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash, Context.Self),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             GuardianAdded_ = guardianAdded
         });
         return new Empty();
@@ -90,7 +90,7 @@ public partial class CAContract
         CheckManagerPermission(input.CaHash, Context.Sender);
         var holderInfo = State.HolderInfoMap[input.CaHash];
         //Select satisfied guardian to remove.
-        //Filter: guardianType.type && guardianType.guardianType && Verifier.name
+        //Filter: guardianAccount.type && guardianAccount.guardianType && Verifier.name
         var toRemoveGuardian = holderInfo.GuardiansInfo.GuardianAccounts
             .FirstOrDefault(g =>
                 g.Guardian.Type == input.GuardianToRemove.Type &&
@@ -107,18 +107,14 @@ public partial class CAContract
         //   If the guardianAccount to be removed is a loginGuardianAccount, ...
         if (loginGuardianAccount.Contains(toRemoveGuardian))
         {
-            var loginGuardianAccountCount = holderInfo.GuardiansInfo.GuardianAccounts
-                .Select(g =>
-                    g.Value == input.GuardianToRemove.Value)
-                .Count();
-
+            var loginGuardianAccountCount = loginGuardianAccount.Count(g => g.Value == toRemoveGuardian.Value);
             //   and it is the only one, refuse. If you really wanna to remove it, unset it first.
             Assert(loginGuardianAccountCount > 1,
-                $"Cannot remove a Guardian for login, to remove it, unset it first. {input.GuardianToRemove?.Value} is a guardian type for login.");
+                $"Cannot remove a Guardian for login, to remove it, unset it first. {input.GuardianToRemove?.Value} is a guardian account for login.");
         }
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -148,7 +144,7 @@ public partial class CAContract
         Context.Fire(new GuardianRemoved
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash, Context.Self),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             GuardianRemoved_ = toRemoveGuardian
         });
 
@@ -166,7 +162,8 @@ public partial class CAContract
         return loginGuardianAccounts;
     }
 
-    private void ReIndexLoginGuardianAccount(RepeatedField<GuardianAccount> loginGuardianAccounts, GuardiansInfo guardiansInfo)
+    private void ReIndexLoginGuardianAccount(RepeatedField<GuardianAccount> loginGuardianAccounts,
+        GuardiansInfo guardiansInfo)
     {
         guardiansInfo.LoginGuardianAccountIndexes.Clear();
 
@@ -174,7 +171,6 @@ public partial class CAContract
         {
             FindGuardianAccountAndSet(guardiansInfo, loginGuardianAccount);
         }
-        
     }
 
     public override Empty UpdateGuardian(UpdateGuardianInput input)
@@ -184,13 +180,13 @@ public partial class CAContract
             "Invalid input.");
         Assert(State.HolderInfoMap[input.CaHash] != null, "CA holder does not exist.");
         Assert(input.GuardianToUpdatePre?.Type == input.GuardianToUpdateNew?.Type &&
-               input.GuardianToUpdatePre?.Value == input.GuardianToUpdateNew?.Value, "Inconsistent guardian type.");
+               input.GuardianToUpdatePre?.Value == input.GuardianToUpdateNew?.Value, "Inconsistent guardian account.");
         Assert(State.HolderInfoMap[input.CaHash].GuardiansInfo != null, "No guardians under the holder.");
         CheckManagerPermission(input.CaHash, Context.Sender);
         var holderInfo = State.HolderInfoMap[input.CaHash];
 
-        //Whether the guardian type to be updated in the holder info.
-        //Filter: guardianType.type && guardianType.guardianType && Verifier.name
+        //Whether the guardian account to be updated in the holder info.
+        //Filter: guardianAccount.type && guardianAccount.guardianType && Verifier.name
         var existPreGuardian = holderInfo.GuardiansInfo.GuardianAccounts.FirstOrDefault(g =>
             g.Guardian.Type == input.GuardianToUpdatePre.Type &&
             g.Value == input.GuardianToUpdatePre.Value &&
@@ -213,7 +209,7 @@ public partial class CAContract
             v.Id == input.GuardianToUpdateNew.VerificationInfo.Id) != null, "Verifier is not exist.");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g=>$"{g.Type}{g.Value}{g.VerificationInfo.Id}" )
+        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -241,12 +237,11 @@ public partial class CAContract
         Context.Fire(new GuardianUpdated
         {
             CaHash = input.CaHash,
-            CaAddress = CalculateCaAddress(input.CaHash, Context.Self),
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
             GuardianUpdatedPre = preGuardian,
             GuardianUpdatedNew = existPreGuardian
         });
 
         return new Empty();
     }
-
 }

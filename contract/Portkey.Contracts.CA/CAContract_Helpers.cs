@@ -9,14 +9,9 @@ namespace Portkey.Contracts.CA;
 
 public partial class CAContract
 {
-    private Address CalculateCaAddress(Hash virtualAddress, Address contractAddress)
-    {
-        return Context.ConvertVirtualAddressToContractAddress(virtualAddress, contractAddress);
-    }
-
     private bool CheckVerifierSignatureAndData(GuardianAccountInfo guardianAccountInfo)
     {
-        //[type,guardianType,verificationTime,verifierAddress]
+        //[type,guardianAccount,verificationTime,verifierAddress]
         var verificationDoc = guardianAccountInfo.VerificationInfo.VerificationDoc;
         if (verificationDoc == null || string.IsNullOrEmpty(verificationDoc))
         {
@@ -52,7 +47,7 @@ public partial class CAContract
         var verifierAddressFromPublicKey = Address.FromPublicKey(publicKey);
 
         return verifierServer != null && verifierAddressFromPublicKey == verifierAddress &&
-               verifierServer.VerifierAddress.Contains(verifierAddress);
+               verifierServer.VerifierAddresses.Contains(verifierAddress);
     }
 
     private bool IsGuardianExist(Hash caHash, GuardianAccountInfo guardianAccountInfo)
@@ -60,6 +55,7 @@ public partial class CAContract
         var satisfiedGuardians = State.HolderInfoMap[caHash].GuardiansInfo.GuardianAccounts.FirstOrDefault(
             g =>
                 g.Value == guardianAccountInfo.Value &&
+                g.Guardian.Type == guardianAccountInfo.Type &&
                 g.Guardian.Verifier.Id == guardianAccountInfo.VerificationInfo.Id
         );
         return satisfiedGuardians != null;

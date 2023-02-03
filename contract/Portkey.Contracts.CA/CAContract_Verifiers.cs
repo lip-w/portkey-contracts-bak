@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using AElf;
 using AElf.Sdk.CSharp;
@@ -9,8 +10,9 @@ public partial class CAContract
 {
     public override Empty AddVerifierServerEndPoints(AddVerifierServerEndPointsInput input)
     {
-        Assert(Context.Sender.Equals(State.Admin.Value),
-            "Only Admin has permission to add VerifierServerEndPoints");
+        // Assert(Context.Sender.Equals(State.Admin.Value),
+        //     "Only Admin has permission to add VerifierServerEndPoints");
+        Assert(State.ServerControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "invalid input");
         Assert(input!.Name != null && !string.IsNullOrEmpty(input.Name), "invalid input name");
         Assert(input!.EndPoints != null && input.EndPoints.Count != 0, "invalid input endPoints");
@@ -35,7 +37,7 @@ public partial class CAContract
                 Name = input.Name,
                 ImageUrl = input.ImageUrl,
                 EndPoints = { input.EndPoints },
-                VerifierAddress = { input.VerifierAddressList }
+                VerifierAddresses = { input.VerifierAddressList }
             });
         }
         else
@@ -49,17 +51,17 @@ public partial class CAContract
                 }
             }
 
-            var countAddress = server.VerifierAddress.Count;
+            var countAddress = server.VerifierAddresses.Count;
             foreach (var address in input.VerifierAddressList!)
             {
-                if (!server.VerifierAddress.Contains(address))
+                if (!server.VerifierAddresses.Contains(address))
                 {
-                    server.VerifierAddress.Add(address);
+                    server.VerifierAddresses.Add(address);
                 }
             }
 
             // Nothing added
-            if (server.EndPoints.Count == count && server.VerifierAddress.Count == countAddress)
+            if (server.EndPoints.Count == count && server.VerifierAddresses.Count == countAddress)
             {
                 return new Empty();
             }
@@ -73,7 +75,7 @@ public partial class CAContract
                 Name = input.Name,
                 ImageUrl = input.ImageUrl,
                 EndPoints = { input.EndPoints },
-                VerifierAddress = { input.VerifierAddressList }
+                VerifierAddresses = { input.VerifierAddressList }
             }
         });
 
@@ -82,8 +84,9 @@ public partial class CAContract
 
     public override Empty RemoveVerifierServerEndPoints(RemoveVerifierServerEndPointsInput input)
     {
-        Assert(Context.Sender.Equals(State.Admin.Value),
-            "Only Admin has permission to remove VerifierServerEndPoints");
+        // Assert(Context.Sender.Equals(State.Admin.Value),
+        //     "Only Admin has permission to remove VerifierServerEndPoints");
+        Assert(State.ServerControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "invalid input");
         Assert(input!.Id != null, "invalid input id");
         Assert(input.EndPoints != null && input.EndPoints.Count != 0, "invalid input endPoints");
@@ -96,25 +99,25 @@ public partial class CAContract
             return new Empty();
         }
 
-        var isExist = false;
-        foreach (var endPoints in input.EndPoints!)
+        var endPoints = new List<string>();
+        foreach (var endPoint in input.EndPoints!)
         {
-            if (server.EndPoints.Contains(endPoints))
+            if (server.EndPoints.Contains(endPoint))
             {
-                isExist = true;
-                server.EndPoints.Remove(endPoints);
+                server.EndPoints.Remove(endPoint);
+                endPoints.Add(endPoint);
             }
         }
 
         // Nothing removed
-        if (!isExist) return new Empty();
+        if (endPoints.Count == 0) return new Empty();
 
         Context.Fire(new VerifierServerEndPointsRemoved
         {
             VerifierServer = new VerifierServer
             {
                 Id = input.Id,
-                EndPoints = { input.EndPoints }
+                EndPoints = { endPoints }
             }
         });
 
@@ -123,8 +126,9 @@ public partial class CAContract
 
     public override Empty RemoveVerifierServer(RemoveVerifierServerInput input)
     {
-        Assert(Context.Sender.Equals(State.Admin.Value),
-            "Only Admin has permission to remove VerifierServer");
+        // Assert(Context.Sender.Equals(State.Admin.Value),
+        //     "Only Admin has permission to remove VerifierServer");
+        Assert(State.ServerControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "invalid input");
         Assert(input!.Id != null, "invalid input id");
         if (State.VerifiersServerList.Value == null) return new Empty();

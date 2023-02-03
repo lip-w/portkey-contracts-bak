@@ -1,3 +1,4 @@
+using System.Linq;
 using AElf.Sdk.CSharp;
 using AElf.Standards.ACS7;
 using AElf.Types;
@@ -20,10 +21,12 @@ public partial class CAContract
         ValidateLoginGuardianAccount(input.CaHash, holderInfo, input.LoginGuardianAccounts,
             input.NotLoginGuardianAccounts);
 
-        Assert(holderInfo!.Managers.Count == input.Managers!.Count,
+        var managers = input.Managers!.Distinct().ToList();
+
+        Assert(holderInfo!.Managers.Count == managers.Count,
             "Managers set is out of time! Please GetHolderInfo again.");
 
-        foreach (var manager in input.Managers)
+        foreach (var manager in managers)
         {
             if (!CAHolderContainsManager(holderInfo.Managers, manager))
             {
@@ -45,17 +48,20 @@ public partial class CAContract
             loginGuardians.Add(holderInfo.GuardiansInfo.GuardianAccounts[index].Value);
         }
 
-        Assert(loginGuardians.Count == loginGuardianAccountInput.Count,
+        var loginGuardianAccounts = loginGuardianAccountInput.Distinct().ToList();
+        var notLoginGuardianAccounts = notLoginGuardianAccountInput.Distinct().ToList();
+
+        Assert(loginGuardians.Count == loginGuardianAccounts.Count,
             "The amount of LoginGuardianAccountInput not equals to HolderInfo's LoginGuardianAccounts");
 
-        foreach (var loginGuardianAccount in loginGuardianAccountInput)
+        foreach (var loginGuardianAccount in loginGuardianAccounts)
         {
             Assert(loginGuardians.Contains(loginGuardianAccount)
                    && State.GuardianAccountMap[loginGuardianAccount] == caHash,
                 $"LoginGuardianAccount:{loginGuardianAccount} is not in HolderInfo's LoginGuardianAccounts");
         }
 
-        foreach (var notLoginGuardianAccount in notLoginGuardianAccountInput)
+        foreach (var notLoginGuardianAccount in notLoginGuardianAccounts)
         {
             Assert(!loginGuardians.Contains(notLoginGuardianAccount)
                    && (State.GuardianAccountMap[notLoginGuardianAccount] == null
@@ -76,14 +82,19 @@ public partial class CAContract
             ValidateCAHolderInfoWithManagersExistsInput.Parser.ParseFrom(originalTransaction.Params);
 
         var holderId = transactionInput.CaHash;
-        var holderInfo = State.HolderInfoMap[holderId] ?? new HolderInfo();
+        var holderInfo = State.HolderInfoMap[holderId] ?? new HolderInfo { CreatorAddress = Context.Sender };
 
-        holderInfo.CreatorAddress = Context.Sender;
         var managersToAdd = ManagersExcept(transactionInput.Managers, holderInfo.Managers);
         var managersToRemove = ManagersExcept(holderInfo.Managers, transactionInput.Managers);
 
         holderInfo.Managers.AddRange(managersToAdd);
         SetDelegators(holderId, managersToAdd);
+
+        foreach (var manager in managersToAdd)
+        {
+            SetContractDelegator(manager);
+        }
+        
         foreach (var manager in managersToRemove)
         {
             holderInfo.Managers.Remove(manager);

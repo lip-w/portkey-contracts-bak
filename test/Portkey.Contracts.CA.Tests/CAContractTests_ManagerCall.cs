@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using AElf;
 using AElf.Contracts.MultiToken;
+using AElf.Kernel.FeeCalculation.Extensions;
 using AElf.Types;
 using Shouldly;
 using Xunit;
@@ -71,10 +72,16 @@ public partial class CAContractTests
         var executionResult = await CaContractStub.ManagerForwardCall.SendWithExceptionAsync(input);
         executionResult.TransactionResult.Error.ShouldContain("No Permission.");
     }
-    
+
     [Fact]
     public async Task ManagerFrowardCallTest_Failed_HolderNotExist()
     {
+        await TokenContractStub.Transfer.SendAsync(new TransferInput
+        {
+            Amount = 1000000000000,
+            Symbol = "ELF",
+            To = User1Address
+        });
         var input = new ManagerForwardCallInput
         {
             CaHash = HashHelper.ComputeFrom("AAA"),
@@ -91,7 +98,7 @@ public partial class CAContractTests
         var executionResult = await CaContractStubManager1.ManagerForwardCall.SendWithExceptionAsync(input);
         executionResult.TransactionResult.Error.ShouldContain("CA holder is null.");
     }
-    
+
     [Fact]
     public async Task ManagerFrowardCallTest_Failed_InvalidInput()
     {
@@ -208,7 +215,7 @@ public partial class CAContractTests
             balance.Balance.ShouldBe(1_00000000);
         }
     }
-    
+
     [Fact]
     public async Task ManagerTransferTest_Failed_NoPermission()
     {
@@ -243,80 +250,87 @@ public partial class CAContractTests
     {
         var caHash = await CreateHolder();
         {
-            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(new ManagerTransferInput
-            {
-                To = User2Address,
-                Symbol = "ELF",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(
+                new ManagerTransferInput
+                {
+                    To = User2Address,
+                    Symbol = "ELF",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("CA hash is null.");
         }
         {
-            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(new ManagerTransferInput
-            {
-                CaHash = caHash,
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(
+                new ManagerTransferInput
+                {
+                    CaHash = caHash,
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid input.");
         }
         {
-            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(new ManagerTransferInput
-            {
-                CaHash = caHash,
-                Symbol = "ELF",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(
+                new ManagerTransferInput
+                {
+                    CaHash = caHash,
+                    Symbol = "ELF",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid input.");
         }
         {
-            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(new ManagerTransferInput
-            {
-                CaHash = caHash,
-                To = User2Address,
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(
+                new ManagerTransferInput
+                {
+                    CaHash = caHash,
+                    To = User2Address,
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid input.");
         }
         {
-            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(new ManagerTransferInput
-            {
-                CaHash = caHash,
-                To = User2Address,
-                Symbol = "ELF",
-                Amount = -1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(
+                new ManagerTransferInput
+                {
+                    CaHash = caHash,
+                    To = User2Address,
+                    Symbol = "ELF",
+                    Amount = -1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid amount.");
         }
         {
-            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(new ManagerTransferInput
-            {
-                CaHash = HashHelper.ComputeFrom("11111"),
-                To = User2Address,
-                Symbol = "ELF",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(
+                new ManagerTransferInput
+                {
+                    CaHash = HashHelper.ComputeFrom("11111"),
+                    To = User2Address,
+                    Symbol = "ELF",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("CA holder is null.");
         }
-        
+
         {
-            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(new ManagerTransferInput
-            {
-                CaHash = caHash,
-                To = User2Address,
-                Symbol = "",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransfer.SendWithExceptionAsync(
+                new ManagerTransferInput
+                {
+                    CaHash = caHash,
+                    To = User2Address,
+                    Symbol = "",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid input.");
         }
     }
-    
+
     [Fact]
     public async Task ManagerTransferFromTest()
     {
@@ -335,44 +349,58 @@ public partial class CAContractTests
             Symbol = "ELF"
         });
         balance1.Balance.ShouldBeGreaterThan(0);
-        await TokenContractStub.Transfer.SendAsync(new TransferInput
+        var balanceOutput = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+        {
+            Owner = DefaultAddress,
+            Symbol = "ELF"
+        });
+        var result = await TokenContractStub.Transfer.SendAsync(new TransferInput
         {
             Amount = 1_0000000_00000000,
             Symbol = "ELF",
             To = caAddress
         });
+        var currentBalance = balanceOutput.Balance - 1_0000000_00000000 -
+                             result.TransactionResult.GetChargedTransactionFees()["ELF"];
         {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
                 Owner = DefaultAddress,
                 Symbol = "ELF"
             });
-            balance.Balance.ShouldBe(87_0000000_00000000);
+            balance.Balance.ShouldBe(currentBalance);
         }
         {
-            await TokenContractStub.Approve.SendAsync(new ApproveInput
+            var approveResult = await TokenContractStub.Approve.SendAsync(new ApproveInput
             {
                 Spender = caAddress,
                 Amount = 1_00000000_00000000,
                 Symbol = "ELF"
             });
+            currentBalance = currentBalance - approveResult.TransactionResult.GetChargedTransactionFees()["ELF"];
         }
-        await CaContractStubManager1.ManagerTransferFrom.SendAsync(new ManagerTransferFromInput
+        var caBalanceOutput = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
         {
-            CaHash = caHash,
-            From = DefaultAddress,
-            To = User2Address,
-            Symbol = "ELF",
-            Amount = 1_00000000,
-            Memo = "ca transfer."
+            Owner = caAddress,
+            Symbol = "ELF"
         });
+        var managerTransferResult = await CaContractStubManager1.ManagerTransferFrom.SendAsync(
+            new ManagerTransferFromInput
+            {
+                CaHash = caHash,
+                From = DefaultAddress,
+                To = User2Address,
+                Symbol = "ELF",
+                Amount = 1_00000000,
+                Memo = "ca transfer."
+            });
         {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
                 Owner = DefaultAddress,
                 Symbol = "ELF"
             });
-            balance.Balance.ShouldBe(87_0000000_00000000 - 1_00000000);
+            balance.Balance.ShouldBe(currentBalance - 1_00000000);
         }
         {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
@@ -382,8 +410,17 @@ public partial class CAContractTests
             });
             balance.Balance.ShouldBe(1_00000000);
         }
+        {
+            var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = caAddress,
+                Symbol = "ELF"
+            });
+            balance.Balance.ShouldBe(caBalanceOutput.Balance -
+                                     managerTransferResult.TransactionResult.GetChargedTransactionFees()["ELF"]);
+        }
     }
-    
+
     [Fact]
     public async Task ManagerTransferFromTest_Failed_NoPermission()
     {
@@ -402,79 +439,85 @@ public partial class CAContractTests
             Symbol = "ELF",
             To = caAddress
         });
-        var executionResult = await CaContractStub.ManagerTransferFrom.SendWithExceptionAsync(new ManagerTransferFromInput
-        {
-            CaHash = caHash,
-            From = DefaultAddress,
-            To = User2Address,
-            Symbol = "ELF",
-            Amount = 1_00000000,
-            Memo = "ca transfer."
-        });
+        var executionResult = await CaContractStub.ManagerTransferFrom.SendWithExceptionAsync(
+            new ManagerTransferFromInput
+            {
+                CaHash = caHash,
+                From = DefaultAddress,
+                To = User2Address,
+                Symbol = "ELF",
+                Amount = 1_00000000,
+                Memo = "ca transfer."
+            });
         executionResult.TransactionResult.Error.ShouldContain("No permission.");
     }
-    
+
     [Fact]
     public async Task ManagerTransferFromTest_Failed_InvalidInput()
     {
         var caHash = await CreateHolder();
         {
-            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(new ManagerTransferFromInput
-            {
-                From = DefaultAddress,
-                To = User2Address,
-                Symbol = "ELF",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(
+                new ManagerTransferFromInput
+                {
+                    From = DefaultAddress,
+                    To = User2Address,
+                    Symbol = "ELF",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("CA hash is null.");
         }
-        
+
         {
-            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(new ManagerTransferFromInput
-            {
-                CaHash = HashHelper.ComputeFrom("12345"),
-                From = DefaultAddress,
-                To = User2Address,
-                Symbol = "ELF",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(
+                new ManagerTransferFromInput
+                {
+                    CaHash = HashHelper.ComputeFrom("12345"),
+                    From = DefaultAddress,
+                    To = User2Address,
+                    Symbol = "ELF",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("CA holder is null.");
         }
         {
-            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(new ManagerTransferFromInput
-            {
-                CaHash = caHash,
-                To = User2Address,
-                Symbol = "ELF",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(
+                new ManagerTransferFromInput
+                {
+                    CaHash = caHash,
+                    To = User2Address,
+                    Symbol = "ELF",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid input.");
         }
-        
+
 
         {
-            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(new ManagerTransferFromInput
-            {
-                CaHash = caHash,
-                From = DefaultAddress,
-                Symbol = "ELF",
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(
+                new ManagerTransferFromInput
+                {
+                    CaHash = caHash,
+                    From = DefaultAddress,
+                    Symbol = "ELF",
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid input.");
         }
         {
-            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(new ManagerTransferFromInput
-            {
-                CaHash = caHash,
-                From = DefaultAddress,
-                To = User2Address,
-                Amount = 1_00000000,
-                Memo = "ca transfer."
-            });
+            var executionResult = await CaContractStubManager1.ManagerTransferFrom.SendWithExceptionAsync(
+                new ManagerTransferFromInput
+                {
+                    CaHash = caHash,
+                    From = DefaultAddress,
+                    To = User2Address,
+                    Amount = 1_00000000,
+                    Memo = "ca transfer."
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid input.");
         }
     }

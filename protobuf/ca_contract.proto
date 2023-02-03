@@ -9,10 +9,16 @@ import "aelf/core.proto";
 import "aelf/options.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+import "authority_info.proto";
+import "acs1.proto";
+
 
 option csharp_namespace = "Portkey.Contracts.CA";
 
 service CAContract {
+
+  option (aelf.base) = "acs1.proto";
+  
   option (aelf.csharp_state) = "Portkey.Contracts.CA.CAContractState";
 
   rpc Initialize(InitializeInput) returns (google.protobuf.Empty){}
@@ -77,6 +83,10 @@ service CAContract {
   rpc SyncHolderInfo (SyncHolderInfoInput) returns (google.protobuf.Empty) {}
 
   rpc ValidateStrategy (ValidateStrategyInput) returns (ValidateStrategyOutput) {option (aelf.is_view) = true;}
+  
+  rpc SetContractDelegationFee (SetContractDelegationFeeInput) returns (google.protobuf.Empty) {}
+  
+  rpc GetContractDelegationFee (google.protobuf.Empty) returns (GetContractDelegationFeeOutput) {}
 }
 
 //Data structure
@@ -121,7 +131,7 @@ message VerifierServer {
   string name = 2;
   string image_url = 3;
   repeated string end_points = 4;
-  repeated aelf.Address verifier_address = 5;
+  repeated aelf.Address verifier_addresses = 5;
 }
 
 message CAServer {
@@ -135,6 +145,10 @@ message VerifierServerList {
 
 message CAServerList {
   repeated CAServer ca_servers = 1;
+}
+
+message ControllerList {
+  repeated aelf.Address controllers = 1;
 }
 
 //Input
@@ -192,6 +206,18 @@ message StrategyLongWrapper {
 
 message StrategyStringWrapper {
   string value = 1;
+}
+
+message ContractDelegationFee {
+  int64 amount = 1;
+}
+
+message SetContractDelegationFeeInput {
+  ContractDelegationFee delegation_fee = 1;
+}
+
+message GetContractDelegationFeeOutput {
+  ContractDelegationFee delegation_fee = 1;
 }
 
 message AddGuardianInput {
