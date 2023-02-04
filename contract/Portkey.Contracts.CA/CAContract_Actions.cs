@@ -188,7 +188,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         
         var delegations = new Dictionary<string, long>
         {
-            [CAContractConstants.ELFTokenSymbol] = State.ContractDelegationFee!.Value.Amount
+            [CAContractConstants.ELFTokenSymbol] = State.ContractDelegationFee.Value.Amount
         };
         
         State.TokenContract.SetTransactionFeeDelegations.Send(new SetTransactionFeeDelegationsInput
