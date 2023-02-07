@@ -48,8 +48,8 @@ public partial class CAContract
             loginGuardians.Add(holderInfo.GuardiansInfo.GuardianAccounts[index].Value);
         }
 
-        var loginGuardianAccounts = loginGuardianAccountInput.Distinct().ToList();
-        var notLoginGuardianAccounts = notLoginGuardianAccountInput.Distinct().ToList();
+        var loginGuardianAccounts = loginGuardianAccountInput.ToList();
+        var notLoginGuardianAccounts = notLoginGuardianAccountInput.ToList();
 
         Assert(loginGuardians.Count == loginGuardianAccounts.Count,
             "The amount of LoginGuardianAccountInput not equals to HolderInfo's LoginGuardianAccounts");
