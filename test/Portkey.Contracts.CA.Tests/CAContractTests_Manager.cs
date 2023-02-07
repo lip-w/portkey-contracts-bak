@@ -143,7 +143,7 @@ public partial class CAContractTests : CAContractTestBase
             DelegatorAddress = User2Address
         });
          
-        delegations.Delegations["ELF"].ShouldBe(100);
+        delegations.Delegations["ELF"].ShouldBe(100_00000000);
     }
 
     [Fact]
@@ -778,7 +778,7 @@ public partial class CAContractTests : CAContractTestBase
             DelegatorAddress = User2Address
         });
          
-        delegations.Delegations["ELF"].ShouldBe(100);
+        delegations.Delegations["ELF"].ShouldBe(100_00000000);
     }
 
     [Fact]
