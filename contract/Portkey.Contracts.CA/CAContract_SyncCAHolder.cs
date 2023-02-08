@@ -60,14 +60,6 @@ public partial class CAContract
                    && State.GuardianAccountMap[loginGuardianAccount] == caHash,
                 $"LoginGuardianAccount:{loginGuardianAccount} is not in HolderInfo's LoginGuardianAccounts");
         }
-
-        foreach (var notLoginGuardianAccount in notLoginGuardianAccounts)
-        {
-            Assert(!loginGuardians.Contains(notLoginGuardianAccount)
-                   && (State.GuardianAccountMap[notLoginGuardianAccount] == null
-                       || State.GuardianAccountMap[notLoginGuardianAccount] != caHash),
-                $"NotLoginGuardianAccount:{notLoginGuardianAccount} is in HolderInfo's LoginGuardianAccounts");
-        }
     }
 
     public override Empty SyncHolderInfo(SyncHolderInfoInput input)
