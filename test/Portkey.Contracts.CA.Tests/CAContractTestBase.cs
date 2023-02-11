@@ -1,19 +1,16 @@
-using System.Threading.Tasks;
 using AElf;
 using AElf.Boilerplate.TestBase;
 using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Parliament;
-using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
 using AElf.Types;
-using Volo.Abp.Threading;
 
 namespace Portkey.Contracts.CA;
 
 public class CAContractTestBase : DAppContractTestBase<CAContractTestModule>
 {
-    internal ParliamentContractImplContainer.ParliamentContractImplStub ParliamentContractStub;
+    //internal ParliamentContractImplContainer.ParliamentContractImplStub ParliamentContractStub;
     internal CAContractContainer.CAContractStub CaContractStub { get; set; }
     internal CAContractContainer.CAContractStub CaContractStubManager1 { get; set; }
     
@@ -48,7 +45,7 @@ public class CAContractTestBase : DAppContractTestBase<CAContractTestModule>
         CaContractStub = GetCaContractTester(DefaultKeyPair);
         CaContractStubManager1 = GetCaContractTester(User1KeyPair);
         CaContractUser1Stub = GetCaContractTester(User1KeyPair);
-        ParliamentContractStub = GetParliamentContractTester(DefaultKeyPair);
+        //ParliamentContractStub = GetParliamentContractTester(DefaultKeyPair);
         TokenContractStub = GetTokenContractTester(DefaultKeyPair);
     }
 
@@ -58,12 +55,12 @@ public class CAContractTestBase : DAppContractTestBase<CAContractTestModule>
         return GetTester<CAContractContainer.CAContractStub>(CaContractAddress,
             keyPair);
     }
-    internal ParliamentContractImplContainer.ParliamentContractImplStub GetParliamentContractTester(
-        ECKeyPair keyPair)
-    {
-        return GetTester<ParliamentContractImplContainer.ParliamentContractImplStub>(ParliamentContractAddress,
-            keyPair);
-    }
+    // internal ParliamentContractImplContainer.ParliamentContractImplStub GetParliamentContractTester(
+    //     ECKeyPair keyPair)
+    // {
+    //     return GetTester<ParliamentContractImplContainer.ParliamentContractImplStub>(ParliamentContractAddress,
+    //         keyPair);
+    // }
     internal TokenContractContainer.TokenContractStub GetTokenContractTester(
         ECKeyPair keyPair)
     {
