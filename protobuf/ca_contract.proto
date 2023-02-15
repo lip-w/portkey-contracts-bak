@@ -494,3 +494,28 @@ message CAServerRemoved {
   option (aelf.is_event) = true;
   CAServer ca_server_removed = 1;
 }
+
+message CAHolderManagerAddedSynced {
+  repeated Manager managers_added = 1;
+}
+message CAHolderManagerRemovedSynced {
+  repeated Manager managers_removed = 2;
+}
+
+message CAHolderLoginGuardianAccountAddedSynced {
+  repeated string login_guardian_accounts_added = 1;
+}
+
+message CAHolderLoginGuardianAccountUnboundSynced {
+  repeated string login_guardian_accounts_unbound = 1;
+}
+
+message CAHolderSynced {
+  option (aelf.is_event) = true;
+  aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
+  aelf.Address ca_address = 2 [(aelf.is_indexed) = true];
+  CAHolderManagerAddedSynced managers_added = 3 [(aelf.is_indexed) = true];
+  CAHolderManagerRemovedSynced managers_removed = 4 [(aelf.is_indexed) = true];
+  CAHolderLoginGuardianAccountAddedSynced login_guardian_accounts_added = 5 [(aelf.is_indexed) = true];
+  CAHolderLoginGuardianAccountUnboundSynced login_guardian_accounts_unbound = 6 [(aelf.is_indexed) = true];
+}
