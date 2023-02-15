@@ -100,7 +100,8 @@ public partial class CAContract
         State.HolderInfoMap[holderId] = holderInfo;
         
         Context.Fire(new CAHolderSynced
-        {
+        {   
+            Creator = Context.Sender,
             CaHash = holderId,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
             ManagersAdded = new CAHolderManagerAddedSynced
