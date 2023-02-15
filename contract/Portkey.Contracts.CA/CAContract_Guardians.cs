@@ -234,6 +234,12 @@ public partial class CAContract
 
         existPreGuardian.Guardian.Verifier.Id = input.GuardianToUpdateNew?.VerificationInfo.Id;
 
+        if (State.LoginGuardianAccountMap[preGuardian.Value][preGuardian.Guardian.Verifier.Id] != null)
+        {
+            State.LoginGuardianAccountMap[preGuardian.Value].Remove(preGuardian.Guardian.Verifier.Id);
+            State.LoginGuardianAccountMap[existPreGuardian.Value][existPreGuardian.Guardian.Verifier.Id] = input.CaHash;
+        }
+        
         Context.Fire(new GuardianUpdated
         {
             CaHash = input.CaHash,
