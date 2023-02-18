@@ -1042,6 +1042,32 @@ public partial class CAContractTests : CAContractTestBase
         });
         result.TransactionResult.Error.ShouldContain("No Permission");
     }
+    
+    [Fact]
+    public async Task RemoveManager_DeviceStringNotMatch_Test()
+    {
+        await CreateHolderDefault();
+        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
+        {
+            LoginGuardianAccount = GuardianAccount
+        });
+        caInfo.Managers.Count.ShouldBe(1);
+        var manager = new Manager
+        {
+            ManagerAddress = User1Address,
+            DeviceString = "1234"
+        };
+        var result = await CaContractUser1Stub.RemoveManager.SendAsync(new RemoveManagerInput()
+        {
+            CaHash = caInfo.CaHash,
+            Manager = manager
+        });
+        caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
+        {
+            LoginGuardianAccount = GuardianAccount
+        });
+        caInfo.Managers.Count.ShouldBe(0);
+    }
 
     private async Task CreateHolderNoPermission()
     {
