@@ -174,12 +174,12 @@ public partial class CAContractTests : CAContractTestBase
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
         var guardians = guardiansInfo.GuardianAccounts;
         guardians.Count.ShouldBe(2);
 

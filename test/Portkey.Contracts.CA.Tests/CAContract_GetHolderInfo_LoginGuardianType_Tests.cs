@@ -111,12 +111,12 @@ public partial class CAContractTests : CAContractTestBase
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
         var guardians = guardiansInfo.GuardianAccounts;
         guardians.Count.ShouldBe(2);
 
@@ -126,7 +126,7 @@ public partial class CAContractTests : CAContractTestBase
 
         getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -138,11 +138,11 @@ public partial class CAContractTests : CAContractTestBase
 
         // check loginGuardianType -> caHash mapping
         getHolderInfoOutput = await GetHolderInfo_Helper(null, GuardianAccount);
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
         guardiansInfo.ShouldNotBeNull();
 
         getHolderInfoOutput = await GetHolderInfo_Helper(null, GuardianAccount1);
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
         guardiansInfo.ShouldNotBeNull();
     }
 
@@ -151,12 +151,12 @@ public partial class CAContractTests : CAContractTestBase
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
         var guardians = guardiansInfo.GuardianAccounts;
         guardians.Count.ShouldBe(2);
 
@@ -166,7 +166,7 @@ public partial class CAContractTests : CAContractTestBase
 
         getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -174,7 +174,7 @@ public partial class CAContractTests : CAContractTestBase
 
         getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -285,7 +285,7 @@ public partial class CAContractTests : CAContractTestBase
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, guardianAccount);
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -421,18 +421,39 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(3);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
 
-        getHolderInfoOutput = await UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        await UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        {
+            await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(new UnsetGuardianAccountForLoginInput
+            {
+                CaHash = caHash,
+                GuardianAccount = new GuardianAccount
+                {
+                    Guardian = new Guardian
+                    {
+                        Type = GuardianType.OfEmail,
+                        Verifier = new Verifier
+                        {
+                            Id = _verifierId
+                        }
+                    },
+                    Value = GuardianAccount
+                }
+            });
+        }
+        getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            LoginGuardianAccount = GuardianAccount1
+        });
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
-
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
+        guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(0);
 
         // check loginGuardianType mapping is removed.
@@ -453,7 +474,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -473,7 +494,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
             }
         });
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
@@ -505,7 +526,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
         });
 
         getHolderInfoOutput = await GetHolderInfo_Helper(caHash, "");
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(3);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -513,7 +534,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
 
         getHolderInfoOutput = await UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -537,7 +558,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
                 }
             });
         getHolderInfoOutput = await GetHolderInfo_Helper(caHash, "");
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -607,7 +628,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
 
         var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -615,7 +636,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
 
         getHolderInfoOutput = await UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardiansInfo = getHolderInfoOutput.GuardiansInfo;
 
         guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
         guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
@@ -786,7 +807,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
         getHolderInfoOutput.GuardiansInfo.LoginGuardianAccountIndexes[2].ShouldBe(3);
     }
 
-    private async Task<IExecutionResult<GetHolderInfoOutput>> SetGuardianAccountForLogin_AndGetHolderInfo_Helper(
+    private async Task<GetHolderInfoOutput> SetGuardianAccountForLogin_AndGetHolderInfo_Helper(
         Hash caHash, GuardianAccount guardianAccount)
     {
         await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
@@ -809,10 +830,10 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
         return await GetHolderInfo_Helper(caHash, "");
     }
 
-    private async Task<IExecutionResult<GetHolderInfoOutput>> GetHolderInfo_Helper(Hash caHash,
+    private async Task<GetHolderInfoOutput> GetHolderInfo_Helper(Hash caHash,
         string loginGuardianType)
     {
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash,
             LoginGuardianAccount = loginGuardianType
@@ -821,7 +842,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
         return getHolderInfoOutput;
     }
 
-    private async Task<IExecutionResult<GetHolderInfoOutput>> UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(
+    private async Task<GetHolderInfoOutput> UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(
         Hash caHash, GuardianAccount guardianAccount)
     {
         await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(new UnsetGuardianAccountForLoginInput
@@ -841,7 +862,7 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
             }
         });
 
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
