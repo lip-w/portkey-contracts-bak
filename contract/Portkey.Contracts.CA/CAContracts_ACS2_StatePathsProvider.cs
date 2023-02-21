@@ -20,10 +20,11 @@ public partial class CAContract
                 {
                     WritePaths =
                     {
-                        GetPath("Balance", Context.ConvertVirtualAddressToContractAddress(args.CaHash).ToString(), args.Symbol),
+                        GetPath("Balances", Context.ConvertVirtualAddressToContractAddress(args.CaHash).ToString(), args.Symbol),
                         GetPath("Balances", args.To.ToString(), args.Symbol),
                         GetPath("MethodFeeFreeAllowancesMap", txn.From.ToString()),
-                        GetPath("MethodFeeFreeAllowancesLastRefreshTimeMap", txn.From.ToString())
+                        GetPath("MethodFeeFreeAllowancesLastRefreshTimeMap", txn.From.ToString()),
+                        GetPath("TransactionFeeDelegateesMap", txn.From.ToString())
                     },
                     ReadPaths =
                     {
@@ -48,14 +49,15 @@ public partial class CAContract
                         GetPath("Allowances", args.From.ToString(), caAddress, args.Symbol),
                         GetPath("Balances", args.From.ToString(), args.Symbol),
                         GetPath("Balances", args.To.ToString(), args.Symbol),
-                        GetPath("LockWhiteLists", args.Symbol, caAddress),
                         GetPath("MethodFeeFreeAllowancesMap", txn.From.ToString()),
-                        GetPath("MethodFeeFreeAllowancesLastRefreshTimeMap", txn.From.ToString())
+                        GetPath("MethodFeeFreeAllowancesLastRefreshTimeMap", txn.From.ToString()),
+                        GetPath("TransactionFeeDelegateesMap", txn.From.ToString())
                     },
                     ReadPaths =
                     {
                         GetPath("TokenInfos", args.Symbol),
                         GetPath("ChainPrimaryTokenSymbol"),
+                        GetPath("LockWhiteLists", args.Symbol, caAddress),
                         GetPath("MethodFeeFreeAllowancesConfig")
                     }
                 };
