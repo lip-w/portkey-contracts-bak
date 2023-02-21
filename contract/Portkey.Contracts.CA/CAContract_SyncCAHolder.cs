@@ -48,8 +48,8 @@ public partial class CAContract
             loginGuardians.Add(holderInfo.GuardiansInfo.GuardianAccounts[index].Value);
         }
 
-        var loginGuardianAccounts = loginGuardianAccountInput.Distinct().ToList();
-        var notLoginGuardianAccounts = notLoginGuardianAccountInput.Distinct().ToList();
+        var loginGuardianAccounts = loginGuardianAccountInput.ToList();
+        var notLoginGuardianAccounts = notLoginGuardianAccountInput.ToList();
 
         Assert(loginGuardians.Count == loginGuardianAccounts.Count,
             "The amount of LoginGuardianAccountInput not equals to HolderInfo's LoginGuardianAccounts");
@@ -59,14 +59,6 @@ public partial class CAContract
             Assert(loginGuardians.Contains(loginGuardianAccount)
                    && State.GuardianAccountMap[loginGuardianAccount] == caHash,
                 $"LoginGuardianAccount:{loginGuardianAccount} is not in HolderInfo's LoginGuardianAccounts");
-        }
-
-        foreach (var notLoginGuardianAccount in notLoginGuardianAccounts)
-        {
-            Assert(!loginGuardians.Contains(notLoginGuardianAccount)
-                   && (State.GuardianAccountMap[notLoginGuardianAccount] == null
-                       || State.GuardianAccountMap[notLoginGuardianAccount] != caHash),
-                $"NotLoginGuardianAccount:{notLoginGuardianAccount} is in HolderInfo's LoginGuardianAccounts");
         }
     }
 
@@ -102,17 +94,41 @@ public partial class CAContract
 
         RemoveDelegators(holderId, managersToRemove);
 
-        SyncLoginGuardianAccount(transactionInput.CaHash, transactionInput.LoginGuardianAccounts,
-            transactionInput.NotLoginGuardianAccounts);
+        var loginGuardianAccountsAdded = SyncLoginGuardianAccountAdded(transactionInput.CaHash, transactionInput.LoginGuardianAccounts);
+        var loginGuardianAccountsUnbound = SyncLoginGuardianAccountUnbound(transactionInput.CaHash, transactionInput.NotLoginGuardianAccounts);
 
         State.HolderInfoMap[holderId] = holderInfo;
+        
+        Context.Fire(new CAHolderSynced
+        {   
+            Creator = Context.Sender,
+            CaHash = holderId,
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
+            ManagersAdded = new CAHolderManagerAddedSynced
+            {
+                ManagersAdded = { managersToAdd }
+            },
+            ManagersRemoved = new CAHolderManagerRemovedSynced
+            {
+                ManagersRemoved = { managersToRemove }
+            },
+            LoginGuardianAccountsAdded = new CAHolderLoginGuardianAccountAddedSynced
+            {
+                LoginGuardianAccountsAdded = { loginGuardianAccountsAdded }
+            },
+            LoginGuardianAccountsUnbound = new CAHolderLoginGuardianAccountUnboundSynced
+            {
+                LoginGuardianAccountsUnbound = { loginGuardianAccountsUnbound }
+            }
+        });
 
         return new Empty();
     }
 
-    private void SyncLoginGuardianAccount(Hash caHash, RepeatedField<string> loginGuardianAccounts,
-        RepeatedField<string> notLoginGuardianAccounts)
+    private RepeatedField<string> SyncLoginGuardianAccountAdded(Hash caHash, RepeatedField<string> loginGuardianAccounts)
     {
+        var list = new RepeatedField<string>();
+        
         if (loginGuardianAccounts != null)
         {
             foreach (var loginGuardianAccount in loginGuardianAccounts)
@@ -121,10 +137,18 @@ public partial class CAContract
                     State.GuardianAccountMap[loginGuardianAccount] != caHash)
                 {
                     State.GuardianAccountMap.Set(loginGuardianAccount, caHash);
+                    list.Add(loginGuardianAccount);
                 }
             }
         }
 
+        return list;
+    }
+    
+    private RepeatedField<string> SyncLoginGuardianAccountUnbound(Hash caHash, RepeatedField<string> notLoginGuardianAccounts)
+    {
+        var list = new RepeatedField<string>();
+        
         if (notLoginGuardianAccounts != null)
         {
             foreach (var notLoginGuardianAccount in notLoginGuardianAccounts)
@@ -132,9 +156,12 @@ public partial class CAContract
                 if (State.GuardianAccountMap[notLoginGuardianAccount] == caHash)
                 {
                     State.GuardianAccountMap.Remove(notLoginGuardianAccount);
+                    list.Add(notLoginGuardianAccount);
                 }
             }
         }
+
+        return list;
     }
 
     private RepeatedField<Manager> ManagersExcept(RepeatedField<Manager> set1, RepeatedField<Manager> set2)
