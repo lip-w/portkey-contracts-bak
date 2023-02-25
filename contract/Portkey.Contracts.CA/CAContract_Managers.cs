@@ -149,7 +149,7 @@ public partial class CAContract
     public override Empty ManagerForwardCall(ManagerForwardCallInput input)
     {
         Assert(input.CaHash != null, "CA hash is null.");
-        Assert(input.ContractAddress != null && !string.IsNullOrEmpty(input.MethodName) && !input.Args.IsEmpty,
+        Assert(input.ContractAddress != null && !string.IsNullOrEmpty(input.MethodName),
             "Invalid input.");
         CheckManagerPermission(input.CaHash, Context.Sender);
         Context.SendVirtualInline(input.CaHash, input.ContractAddress, input.MethodName, input.Args);
