@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using AElf.Contracts.MultiToken;
 using AElf.Sdk.CSharp;
@@ -14,29 +13,27 @@ public partial class CAContract
     // For SocialRecovery
     public override Empty SocialRecovery(SocialRecoveryInput input)
     {
-        // Assert(Context.ChainId == ChainHelper.ConvertBase58ToChainId("AELF"),
-        //     "Social Recovery can only be acted at AElf mainchain.");
         Assert(input != null, "invalid input");
-        Assert(input!.LoginGuardianAccount != null && !string.IsNullOrEmpty(input.LoginGuardianAccount),
-            "invalid input login guardian account");
-        Assert(input.Manager != null, "invalid input manager");
-        Assert(input.Manager!.DeviceString != null && !string.IsNullOrEmpty(input.Manager.DeviceString),
-            "invalid input deviceString");
-        Assert(input.Manager.ManagerAddress != null, "invalid input managerAddress");
-        var loginGuardianAccount = input.LoginGuardianAccount;
-        var caHash = State.GuardianAccountMap[loginGuardianAccount];
+        Assert(CheckHashInput(input!.LoginGuardianIdentifierHash), "invalid input login guardian");
+        Assert(input.ManagerInfo != null, "invalid input managerInfo");
+        Assert(input.ManagerInfo!.ExtraData != null && !string.IsNullOrEmpty(input.ManagerInfo.ExtraData),
+            "invalid input extraData");
+        Assert(input.ManagerInfo.Address != null, "invalid input address");
+        var loginGuardianIdentifierHash = input.LoginGuardianIdentifierHash;
+        var caHash = State.GuardianMap[loginGuardianIdentifierHash];
 
         Assert(caHash != null, "CA Holder does not exist.");
 
         var holderInfo = State.HolderInfoMap[caHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {caHash}");
-        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {caHash}");
-        var guardians = holderInfo.GuardiansInfo!.GuardianAccounts;
+        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {caHash}");
+        var guardians = holderInfo.GuardianList!.Guardians;
 
         Assert(input.GuardiansApproved.Count > 0, "invalid input Guardians Approved");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
+        var guardianApprovedList = input.GuardiansApproved
+            .DistinctBy(g => $"{g.Type}{g.IdentifierHash}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -53,97 +50,93 @@ public partial class CAContract
         IsJudgementStrategySatisfied(guardians.Count, guardianApprovedAmount,
             holderInfo.JudgementStrategy);
 
-        // Manager exists
-        var manager = FindManager(holderInfo.Managers, input.Manager.ManagerAddress);
-        Assert(manager == null, $"Manager address exists");
+        // ManagerInfo exists
+        var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, input.ManagerInfo.Address);
+        Assert(managerInfo == null, $"ManagerInfo exists");
 
-        State.HolderInfoMap[caHash].Managers.Add(input.Manager);
-        SetDelegator(caHash, input.Manager);
+        State.HolderInfoMap[caHash].ManagerInfos.Add(input.ManagerInfo);
+        SetDelegator(caHash, input.ManagerInfo);
 
-        SetContractDelegator(input.Manager);
+        SetContractDelegator(input.ManagerInfo);
 
-        Context.Fire(new ManagerSocialRecovered()
+        Context.Fire(new ManagerInfoSocialRecovered()
         {
             CaHash = caHash,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(caHash),
-            Manager = input.Manager.ManagerAddress,
-            DeviceString = input.Manager.DeviceString
+            Manager = input.ManagerInfo.Address,
+            ExtraData = input.ManagerInfo.ExtraData
         });
 
         return new Empty();
     }
 
-    public override Empty AddManager(AddManagerInput input)
+    public override Empty AddManagerInfo(AddManagerInfoInput input)
     {
-        // Assert(Context.ChainId == ChainHelper.ConvertBase58ToChainId("AELF"),
-        //     "Manager can only be added at AElf mainchain.");
         Assert(input != null, "invalid input");
-        CheckManagerInput(input!.CaHash, input.Manager);
-        //Assert(Context.Sender.Equals(input.Manager.ManagerAddress), "No permission to add");
+        CheckManagerInfoInput(input!.CaHash, input.ManagerInfo);
+        //Assert(Context.Sender.Equals(input.ManagerInfo.Address), "No permission to add");
 
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
-        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
+        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {input.CaHash}");
 
-        // Manager exists
-        var manager = FindManager(holderInfo.Managers, input.Manager.ManagerAddress);
-        Assert(manager == null, $"Manager address exists");
+        // ManagerInfo exists
+        var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, input.ManagerInfo.Address);
+        Assert(managerInfo == null, $"ManagerInfo address exists");
 
-        holderInfo.Managers.Add(input.Manager);
-        SetDelegator(input.CaHash, input.Manager);
+        holderInfo.ManagerInfos.Add(input.ManagerInfo);
+        SetDelegator(input.CaHash, input.ManagerInfo);
 
-        SetContractDelegator(input.Manager);
+        SetContractDelegator(input.ManagerInfo);
 
-        Context.Fire(new ManagerAdded
+        Context.Fire(new ManagerInfoAdded
         {
             CaHash = input.CaHash,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
-            Manager = input.Manager.ManagerAddress,
-            DeviceString = input.Manager.DeviceString
+            Manager = input.ManagerInfo.Address,
+            ExtraData = input.ManagerInfo.ExtraData
         });
 
         return new Empty();
     }
 
-    public override Empty RemoveManager(RemoveManagerInput input)
+    public override Empty RemoveManagerInfo(RemoveManagerInfoInput input)
     {
-        // Assert(Context.ChainId == ChainHelper.ConvertBase58ToChainId("AELF"),
-        //     "Manager can only be removed at AElf mainchain.");
         Assert(input != null, "invalid input");
-        CheckManagerInput(input!.CaHash, input.Manager);
-        //Assert(Context.Sender.Equals(input.Manager.ManagerAddress), "No permission to remove");
+        CheckManagerInfoInput(input!.CaHash, input.ManagerInfo);
+        //Assert(Context.Sender.Equals(input.Manager.Address), "No permission to remove");
 
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
-        Assert(holderInfo!.GuardiansInfo != null, $"No guardians found in this holder by caHash: {input.CaHash}");
+        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {input.CaHash}");
 
         // Manager does not exist
-        var manager = FindManager(holderInfo.Managers, input.Manager.ManagerAddress);
-        if (manager == null)
+        var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, input.ManagerInfo.Address);
+        if (managerInfo == null)
         {
             return new Empty();
         }
 
-        holderInfo.Managers.Remove(manager);
-        RemoveDelegator(input.CaHash, manager);
+        holderInfo.ManagerInfos.Remove(managerInfo);
+        RemoveDelegator(input.CaHash, managerInfo);
 
-        Context.Fire(new ManagerRemoved
+        Context.Fire(new ManagerInfoRemoved
         {
             CaHash = input.CaHash,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
-            Manager = manager.ManagerAddress,
-            DeviceString = manager.DeviceString
+            Manager = managerInfo.Address,
+            ExtraData = managerInfo.ExtraData
         });
 
         return new Empty();
     }
 
-    private void CheckManagerInput(Hash hash, Manager manager)
+    private void CheckManagerInfoInput(Hash hash, ManagerInfo managerInfo)
     {
         Assert(hash != null, "invalid input CaHash");
-        CheckManagerPermission(hash, Context.Sender);
-        Assert(manager != null, "invalid input manager");
-        Assert(!string.IsNullOrEmpty(manager!.DeviceString) && manager.ManagerAddress != null, "invalid input manager");
+        CheckManagerInfoPermission(hash, Context.Sender);
+        Assert(managerInfo != null, "invalid input managerInfo");
+        Assert(!string.IsNullOrEmpty(managerInfo!.ExtraData) && managerInfo.Address != null, "invalid input managerInfo");
     }
 
     public override Empty ManagerForwardCall(ManagerForwardCallInput input)
@@ -151,7 +144,7 @@ public partial class CAContract
         Assert(input.CaHash != null, "CA hash is null.");
         Assert(input.ContractAddress != null && !string.IsNullOrEmpty(input.MethodName),
             "Invalid input.");
-        CheckManagerPermission(input.CaHash, Context.Sender);
+        CheckManagerInfoPermission(input.CaHash, Context.Sender);
         Context.SendVirtualInline(input.CaHash, input.ContractAddress, input.MethodName, input.Args);
         return new Empty();
     }
@@ -159,7 +152,7 @@ public partial class CAContract
     public override Empty ManagerTransfer(ManagerTransferInput input)
     {
         Assert(input.CaHash != null, "CA hash is null.");
-        CheckManagerPermission(input.CaHash, Context.Sender);
+        CheckManagerInfoPermission(input.CaHash, Context.Sender);
         Assert(input.To != null && !string.IsNullOrEmpty(input.Symbol), "Invalid input.");
         Context.SendVirtualInline(input.CaHash, State.TokenContract.Value,
             nameof(State.TokenContract.Transfer),
@@ -176,7 +169,7 @@ public partial class CAContract
     public override Empty ManagerTransferFrom(ManagerTransferFromInput input)
     {
         Assert(input.CaHash != null, "CA hash is null.");
-        CheckManagerPermission(input.CaHash, Context.Sender);
+        CheckManagerInfoPermission(input.CaHash, Context.Sender);
         Assert(input.From != null && input.To != null && !string.IsNullOrEmpty(input.Symbol),
             "Invalid input.");
         Context.SendVirtualInline(input.CaHash, State.TokenContract.Value,
@@ -192,14 +185,14 @@ public partial class CAContract
         return new Empty();
     }
 
-    private void CheckManagerPermission(Hash caHash, Address managerAddress)
+    private void CheckManagerInfoPermission(Hash caHash, Address address)
     {
         Assert(State.HolderInfoMap[caHash] != null, $"CA holder is null.CA hash:{caHash}");
-        Assert(State.HolderInfoMap[caHash].Managers.Any(m => m.ManagerAddress == managerAddress), "No permission.");
+        Assert(State.HolderInfoMap[caHash].ManagerInfos.Any(m => m.Address == address), "No permission.");
     }
-    
-    private Manager FindManager(RepeatedField<Manager> managers, Address managerAddress)
+
+    private ManagerInfo FindManagerInfo(RepeatedField<ManagerInfo> managerInfos, Address address)
     {
-        return managers.FirstOrDefault(s => s.ManagerAddress == managerAddress);
+        return managerInfos.FirstOrDefault(s => s.Address == address);
     }
 }

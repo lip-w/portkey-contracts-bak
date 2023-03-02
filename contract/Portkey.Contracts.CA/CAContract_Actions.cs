@@ -37,14 +37,13 @@ public partial class CAContract : CAContractContainer.CAContractBase
         //Assert(Context.Sender == State.RegisterOrRecoveryController.Value,"No permission.");
         Assert(State.CreatorControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "Invalid input.");
-        Assert(input!.GuardianApproved != null
-               && !string.IsNullOrEmpty(input.GuardianApproved.Value),
-            "invalid input guardian account");
+        Assert(input!.GuardianApproved != null && CheckHashInput(input.GuardianApproved.IdentifierHash),
+            "invalid input guardian");
         Assert(
             input.GuardianApproved!.VerificationInfo != null, "invalid verification");
-        Assert(input.Manager != null, "invalid input manager");
-        var guardianAccountValue = input.GuardianApproved.Value;
-        var holderId = State.GuardianAccountMap[guardianAccountValue];
+        Assert(input.ManagerInfo != null, "invalid input managerInfo");
+        var guardianIdentifierHash = input.GuardianApproved.IdentifierHash;
+        var holderId = State.GuardianMap[guardianIdentifierHash];
 
         // if CAHolder exists
         if (holderId != null) return new Empty();
@@ -53,60 +52,55 @@ public partial class CAContract : CAContractContainer.CAContractBase
         holderId = HashHelper.ConcatAndCompute(Context.TransactionId, Context.PreviousBlockHash);
 
         holderInfo.CreatorAddress = Context.Sender;
-        holderInfo.Managers.Add(input.Manager);
+        holderInfo.ManagerInfos.Add(input.ManagerInfo);
 
         //Check verifier signature.
         Assert(CheckVerifierSignatureAndData(input.GuardianApproved), "Guardian verification failed.");
 
-        var guardianAccount = new GuardianAccount
+        var guardian = new Guardian
         {
-            Value = input.GuardianApproved.Value,
-            Guardian = new Guardian
-            {
-                Type = input.GuardianApproved.Type,
-                Verifier = new Verifier
-                {
-                    Id = input.GuardianApproved.VerificationInfo!.Id
-                }
-            }
+            IdentifierHash = input.GuardianApproved.IdentifierHash,
+            Salt = GetSaltFromVerificationDoc(input.GuardianApproved.VerificationInfo!.VerificationDoc),
+            Type = input.GuardianApproved.Type,
+            VerifierId = input.GuardianApproved.VerificationInfo.Id,
+            IsLoginGuardian = true
         };
 
-        holderInfo.GuardiansInfo = new GuardiansInfo
+        holderInfo.GuardianList = new GuardianList
         {
-            GuardianAccounts = { guardianAccount },
-            LoginGuardianAccountIndexes = { 0 }
+            Guardians = { guardian }
         };
 
         holderInfo.JudgementStrategy = input.JudgementStrategy ?? Strategy.DefaultStrategy();
 
         // Where is the code for double check approved guardians?
         // Don't forget to assign GuardianApprovedCount
-        IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count, 1, holderInfo.JudgementStrategy);
+        IsJudgementStrategySatisfied(holderInfo.GuardianList.Guardians.Count, 1, holderInfo.JudgementStrategy);
 
         State.HolderInfoMap[holderId] = holderInfo;
-        State.GuardianAccountMap[guardianAccountValue] = holderId;
-        State.LoginGuardianAccountMap[guardianAccountValue][input.GuardianApproved.VerificationInfo.Id] = holderId;
-        
-        SetDelegator(holderId, input.Manager);
-        
-        SetContractDelegator(input.Manager);
-        
+        State.GuardianMap[guardianIdentifierHash] = holderId;
+        State.LoginGuardianMap[guardianIdentifierHash][input.GuardianApproved.VerificationInfo.Id] = holderId;
+
+        SetDelegator(holderId, input.ManagerInfo);
+
+        SetContractDelegator(input.ManagerInfo);
+
         // Log Event
         Context.Fire(new CAHolderCreated
         {
             Creator = Context.Sender,
             CaHash = holderId,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
-            Manager = input.Manager!.ManagerAddress,
-            DeviceString = input.Manager.DeviceString
+            Manager = input.ManagerInfo!.Address,
+            ExtraData = input.ManagerInfo.ExtraData
         });
 
-        Context.Fire(new LoginGuardianAccountAdded
+        Context.Fire(new LoginGuardianAdded
         {
             CaHash = holderId,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
-            LoginGuardianAccount = guardianAccount,
-            Manager = input.Manager.ManagerAddress,
+            LoginGuardian = guardian,
+            Manager = input.ManagerInfo.Address,
         });
 
         return new Empty();
@@ -130,7 +124,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
             $"{CAContractConstants.GuardianApprovedCount}:{guardianApprovedCount}");
     }
 
-    private void SetDelegator(Hash holderId, Manager manager)
+    private void SetDelegator(Hash holderId, ManagerInfo managerInfo)
     {
         var delegations = new Dictionary<string, long>
         {
@@ -141,7 +135,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
             nameof(State.TokenContract.SetTransactionFeeDelegations),
             new SetTransactionFeeDelegationsInput
             {
-                DelegatorAddress = manager.ManagerAddress,
+                DelegatorAddress = managerInfo.Address,
                 Delegations =
                 {
                     delegations
@@ -149,33 +143,33 @@ public partial class CAContract : CAContractContainer.CAContractBase
             });
     }
 
-    private void SetDelegators(Hash holderId, RepeatedField<Manager> managers)
+    private void SetDelegators(Hash holderId, RepeatedField<ManagerInfo> managerInfos)
     {
-        foreach (var manager in managers)
+        foreach (var managerInfo in managerInfos)
         {
-            SetDelegator(holderId, manager);
+            SetDelegator(holderId, managerInfo);
         }
     }
 
-    private void RemoveDelegator(Hash holderId, Manager manager)
+    private void RemoveDelegator(Hash holderId, ManagerInfo managerInfo)
     {
         Context.SendVirtualInline(holderId, State.TokenContract.Value,
             nameof(State.TokenContract.RemoveTransactionFeeDelegator),
             new RemoveTransactionFeeDelegatorInput
             {
-                DelegatorAddress = manager.ManagerAddress
+                DelegatorAddress = managerInfo.Address
             });
     }
 
-    private void RemoveDelegators(Hash holderId, RepeatedField<Manager> managers)
+    private void RemoveDelegators(Hash holderId, RepeatedField<ManagerInfo> managerInfos)
     {
-        foreach (var manager in managers)
+        foreach (var managerInfo in managerInfos)
         {
-            RemoveDelegator(holderId, manager);
+            RemoveDelegator(holderId, managerInfo);
         }
     }
 
-    private void SetContractDelegator(Manager manager)
+    private void SetContractDelegator(ManagerInfo managerInfo)
     {
         // Todo Temporary, need delete later
         if (State.ContractDelegationFee.Value == null)
@@ -185,15 +179,15 @@ public partial class CAContract : CAContractContainer.CAContractBase
                 Amount = CAContractConstants.DefaultContractDelegationFee
             };
         }
-        
+
         var delegations = new Dictionary<string, long>
         {
             [CAContractConstants.ELFTokenSymbol] = State.ContractDelegationFee.Value.Amount
         };
-        
+
         State.TokenContract.SetTransactionFeeDelegations.Send(new SetTransactionFeeDelegationsInput
         {
-            DelegatorAddress = manager.ManagerAddress,
+            DelegatorAddress = managerInfo.Address,
             Delegations =
             {
                 delegations
@@ -211,6 +205,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         {
             State.ContractDelegationFee!.Value = new ContractDelegationFee();
         }
+
         State.ContractDelegationFee.Value.Amount = input.DelegationFee.Amount;
 
         return new Empty();

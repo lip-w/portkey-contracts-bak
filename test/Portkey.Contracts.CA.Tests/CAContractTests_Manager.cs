@@ -24,25 +24,25 @@ public partial class CAContractTests : CAContractTestBase
             {
                 Name = VerifierName,
                 ImageUrl = "url",
-                EndPoints = {"127.0.0.1"},
-                VerifierAddressList = {VerifierAddress}
+                EndPoints = { "127.0.0.1" },
+                VerifierAddressList = { VerifierAddress }
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName1,
                 ImageUrl = "url",
-                EndPoints = {"127.0.0.1"},
-                VerifierAddressList = {VerifierAddress1}
+                EndPoints = { "127.0.0.1" },
+                VerifierAddressList = { VerifierAddress1 }
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName2,
                 ImageUrl = "url",
-                EndPoints = {"127.0.0.1"},
-                VerifierAddressList = {VerifierAddress2}
+                EndPoints = { "127.0.0.1" },
+                VerifierAddressList = { VerifierAddress2 }
             });
         }
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         {
@@ -53,26 +53,26 @@ public partial class CAContractTests : CAContractTestBase
         }
         await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput
         {
-            GuardianApproved = new GuardianAccountInfo
+            GuardianApproved = new GuardianInfo
             {
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 Type = GuardianType.OfEmail,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             },
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User1Address,
-                DeviceString = "123"
+                Address = User1Address,
+                ExtraData = "123"
             }
         });
         var holderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
         await TokenContractStub.Transfer.SendAsync(new TransferInput
         {
@@ -87,41 +87,41 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 Type = GuardianType.OfEmail,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         await CaContractStub.SocialRecovery.SendAsync(new SocialRecoveryInput
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove }
         });
 
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        caInfo.Managers.Count.ShouldBe(2);
-        caInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(1);
+        caInfo.ManagerInfos.Count.ShouldBe(2);
+        caInfo.GuardianList.Guardians.Count.ShouldBe(1);
 
         var delegateAllowance = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(
             new GetTransactionFeeDelegationsOfADelegateeInput()
@@ -131,18 +131,19 @@ public partial class CAContractTests : CAContractTestBase
             });
         delegateAllowance.Delegations["ELF"].ShouldBe(10000000000000000L);
     }
-    
+
     [Fact]
     public async Task SocialRecoveryTest_Delegator()
     {
         await SocialRecoveryTest();
-         
-        var delegations = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(new GetTransactionFeeDelegationsOfADelegateeInput
-        {
-            DelegateeAddress = CaContractAddress,
-            DelegatorAddress = User2Address
-        });
-         
+
+        var delegations = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(
+            new GetTransactionFeeDelegationsOfADelegateeInput
+            {
+                DelegateeAddress = CaContractAddress,
+                DelegatorAddress = User2Address
+            });
+
         delegations.Delegations["ELF"].ShouldBe(100_00000000);
     }
 
@@ -156,33 +157,33 @@ public partial class CAContractTests : CAContractTestBase
         });
 
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove }
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -200,32 +201,32 @@ public partial class CAContractTests : CAContractTestBase
         await CaContractStub.RemoveVerifierServer.SendAsync(input);
 
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
 
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove }
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -235,42 +236,42 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove }
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
-        var guardianApprove1 = new List<GuardianAccountInfo>
+        var guardianApprove1 = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
@@ -281,13 +282,13 @@ public partial class CAContractTests : CAContractTestBase
 
         var executionResult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove1}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove1 }
         });
         executionResult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -297,35 +298,35 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 Type = GuardianType.OfEmail,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User1Address,
-                DeviceString = "567"
+                Address = User1Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove }
         });
-        result.TransactionResult.Error.ShouldContain("Manager address exists");
+        result.TransactionResult.Error.ShouldContain("ManagerInfo exists");
     }
 
     [Fact]
@@ -335,146 +336,148 @@ public partial class CAContractTests : CAContractTestBase
         var expiredVerificationTime = DateTime.UtcNow.AddHours(-10);
         var verificationTime = DateTime.UtcNow;
         var signature =
-            GenerateSignature(VerifierKeyPair, VerifierAddress, expiredVerificationTime, GuardianAccount, 0);
-        var signature1 = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+            GenerateSignature(VerifierKeyPair, VerifierAddress, expiredVerificationTime, _guardian, 0);
+        var signature1 = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var id2 = verifierServer.VerifierServers[1].Id;
         // Verifier signature has expired.
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{expiredVerificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian},{expiredVerificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove }
         });
         result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
         //VerificationDoc parse failed. Invalid guardian type name.
-        var guardianApprove1 = new List<GuardianAccountInfo>
+        var guardianApprove1 = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo()
                 {
                     Id = id,
                     Signature = signature1,
-                    VerificationDoc = $"{"abc"},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc =
+                        $"{"abc"},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var executionResult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove1}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove1 }
         });
         executionResult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
         //Invalid guardian type.
-        var guardianApprove2 = new List<GuardianAccountInfo>
+        var guardianApprove2 = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature1,
-                    VerificationDoc = $"{0},{GuardianAccountNotExist},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardianNotExist.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var exeRsult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove2}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove2 }
         });
         exeRsult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
 
-        var guardianApprove3 = new List<GuardianAccountInfo>
+        var guardianApprove3 = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress4.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress4.ToBase58()},{Salt}"
                 }
             }
         };
 
         var eresult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove3}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove3 }
         });
         eresult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder：guardianCount");
 
-        var guardianApprove4 = new List<GuardianAccountInfo>
+        var guardianApprove4 = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id2,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var inputResult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove4}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove4 }
         });
         inputResult.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder");
     }
@@ -485,37 +488,37 @@ public partial class CAContractTests : CAContractTestBase
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
 
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
 
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
         result.TransactionResult.Error.ShouldContain("invalid input Guardians Approved");
     }
@@ -525,12 +528,12 @@ public partial class CAContractTests : CAContractTestBase
     {
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
         result.TransactionResult.Error.ShouldContain("CA Holder does not exist");
     }
@@ -548,179 +551,179 @@ public partial class CAContractTests : CAContractTestBase
     }
 
     [Fact]
-    public async Task SocialRecoveryTest_LoginGuardianAccountIsNull()
+    public async Task SocialRecoveryTest_LoginGuardianIdentifierHashIsNull()
     {
         await CreateHolderDefault();
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
         });
-        result.TransactionResult.Error.ShouldContain("invalid input login guardian account");
+        result.TransactionResult.Error.ShouldContain("invalid input login guardian");
     }
 
     //manager is null
     [Fact]
-    public async Task SocialRecoveryTest_ManagerIsNull()
+    public async Task SocialRecoveryTest_ManagerInfoIsNull()
     {
         await CreateHolderDefault();
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
         result.TransactionResult.Error.ShouldContain("invalid input");
     }
 
 
     [Fact]
-    public async Task SocialRecoveryTest_ManagerExits()
+    public async Task SocialRecoveryTest_ManagerInfoExits()
     {
         await CreateHolderDefault();
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
-        var guardianApprove = new List<GuardianAccountInfo>
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User1Address,
-                DeviceString = "123"
+                Address = User1Address,
+                ExtraData = "123"
             },
-            LoginGuardianAccount = GuardianAccount,
-            GuardiansApproved = {guardianApprove}
+            LoginGuardianIdentifierHash = _guardian,
+            GuardiansApproved = { guardianApprove }
         });
-        result.TransactionResult.Error.ShouldContain("Manager address exists");
+        result.TransactionResult.Error.ShouldContain("ManagerInfo exists");
 
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        caInfo.Managers.Count.ShouldBe(1);
-        caInfo.GuardiansInfo.GuardianAccounts.Count.ShouldBe(1);
+        caInfo.ManagerInfos.Count.ShouldBe(1);
+        caInfo.GuardianList.Guardians.Count.ShouldBe(1);
     }
 
     [Fact]
-    public async Task SocialRecoveryTest_GuardianAccount()
+    public async Task SocialRecoveryTest_Guardian()
     {
         await CreateHolderDefault();
-        // GuardianAccount_ is "";
+        // Guardian_ is "";
         var executionResult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = "567"
+                Address = User2Address,
+                ExtraData = "567"
             },
-            LoginGuardianAccount = ""
+            LoginGuardianIdentifierHash = null
         });
-        executionResult.TransactionResult.Error.ShouldContain("invalid input login guardian account");
+        executionResult.TransactionResult.Error.ShouldContain("invalid input login guardian");
     }
 
     [Fact]
-    public async Task SocialRecoveryTest_Manager()
+    public async Task SocialRecoveryTest_ManagerInfo()
     {
         await CreateHolderDefault();
         //manager is null;
         var exresult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
         exresult.TransactionResult.Error.ShouldContain("invalid input");
 
-        //managerAddress  is  null;
+        //Address  is  null;
         var exeResult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = ""
+                Address = User2Address,
+                ExtraData = ""
             },
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        exeResult.TransactionResult.Error.ShouldContain("invalid input deviceString");
+        exeResult.TransactionResult.Error.ShouldContain("invalid input extraData");
 
         var eResult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
+                Address = User2Address,
             },
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        eResult.TransactionResult.Error.ShouldContain("invalid input deviceString");
-        //managerAddress is null
+        eResult.TransactionResult.Error.ShouldContain("invalid input extraData");
+        //Address is null
         var result = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = null,
-                DeviceString = "123"
+                Address = null,
+                ExtraData = "123"
             },
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
         result.TransactionResult.Error.ShouldContain("invalid input");
-        //DeviceString is "";
+        //ExtraData is "";
         var executionResult = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
-                DeviceString = ""
+                Address = User2Address,
+                ExtraData = ""
             },
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        executionResult.TransactionResult.Error.ShouldContain("invalid input deviceString");
-        //DeviceString is null
+        executionResult.TransactionResult.Error.ShouldContain("invalid input extraData");
+        //ExtraData is null
         var exceptionAsync = await CaContractStub.SocialRecovery.SendWithExceptionAsync(new SocialRecoveryInput()
         {
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User2Address,
+                Address = User2Address,
             },
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        exceptionAsync.TransactionResult.Error.ShouldContain("invalid input deviceString");
+        exceptionAsync.TransactionResult.Error.ShouldContain("invalid input extraData");
     }
 
     [Fact]
-    public async Task AddManagerTest()
+    public async Task AddManagerInfoTest()
     {
         await CreateHolderDefault();
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
 
         //success
-        var manager = new Manager()
+        var manager = new ManagerInfo()
         {
-            ManagerAddress = User2Address,
-            DeviceString = "iphone14-2022"
+            Address = User2Address,
+            ExtraData = "iphone14-2022"
         };
-        await CaContractUser1Stub.AddManager.SendAsync(new AddManagerInput()
+        await CaContractUser1Stub.AddManagerInfo.SendAsync(new AddManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = manager
+            ManagerInfo = manager
         });
         var delegateAllowance = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(
             new GetTransactionFeeDelegationsOfADelegateeInput()
@@ -731,286 +734,295 @@ public partial class CAContractTests : CAContractTestBase
         delegateAllowance.Delegations["ELF"].ShouldBe(10000000000000000L);
         caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        caInfo.Managers.ShouldContain(manager);
+        caInfo.ManagerInfos.ShouldContain(manager);
 
         //caHolder not exist
-        var notExistedCash = HashHelper.ComputeFrom("Invalid CaHash");
-        var txExecutionResult = await CaContractUser1Stub.AddManager.SendWithExceptionAsync(new AddManagerInput()
-        {
-            CaHash = notExistedCash,
-            Manager = new Manager()
+        var notExistedCaHash = HashHelper.ComputeFrom("Invalid CaHash");
+        var txExecutionResult = await CaContractUser1Stub.AddManagerInfo.SendWithExceptionAsync(
+            new AddManagerInfoInput()
             {
-                ManagerAddress = User2Address,
-                DeviceString = "iphone14-2022"
-            }
-        });
+                CaHash = notExistedCaHash,
+                ManagerInfo = new ManagerInfo()
+                {
+                    Address = User2Address,
+                    ExtraData = "iphone14-2022"
+                }
+            });
         txExecutionResult.TransactionResult.Error.ShouldContain("CA holder is null");
 
         //input caHash is null
-        txExecutionResult = await CaContractUser1Stub.AddManager.SendWithExceptionAsync(new AddManagerInput()
+        txExecutionResult = await CaContractUser1Stub.AddManagerInfo.SendWithExceptionAsync(new AddManagerInfoInput()
         {
-            Manager = new Manager()
+            ManagerInfo = new ManagerInfo()
             {
-                ManagerAddress = User2Address,
-                DeviceString = "iphone14-2022"
+                Address = User2Address,
+                ExtraData = "iphone14-2022"
             }
         });
         txExecutionResult.TransactionResult.Error.ShouldContain("invalid input CaHash");
 
         //input manager is null
-        txExecutionResult = await CaContractUser1Stub.AddManager.SendWithExceptionAsync(new AddManagerInput()
+        txExecutionResult = await CaContractUser1Stub.AddManagerInfo.SendWithExceptionAsync(new AddManagerInfoInput()
         {
             CaHash = caInfo.CaHash
         });
         txExecutionResult.TransactionResult.Error.ShouldContain("invalid input manager");
     }
-    
+
     [Fact]
-    public async Task AddManager_Delegator()
+    public async Task AddManagerInfo_Delegator()
     {
-        await AddManagerTest();
-         
-        var delegations = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(new GetTransactionFeeDelegationsOfADelegateeInput
-        {
-            DelegateeAddress = CaContractAddress,
-            DelegatorAddress = User2Address
-        });
-         
+        await AddManagerInfoTest();
+
+        var delegations = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(
+            new GetTransactionFeeDelegationsOfADelegateeInput
+            {
+                DelegateeAddress = CaContractAddress,
+                DelegatorAddress = User2Address
+            });
+
         delegations.Delegations["ELF"].ShouldBe(100_00000000);
     }
 
     [Fact]
-    public async Task AddManager_NoPermissionTest()
+    public async Task AddManagerInfo_NoPermissionTest()
     {
         await CreateHolderNoPermission();
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
 
         //success
-        var manager = new Manager()
+        var manager = new ManagerInfo()
         {
-            ManagerAddress = User3Address,
-            DeviceString = "iphone14-2022"
+            Address = User3Address,
+            ExtraData = "iphone14-2022"
         };
-        var result = await CaContractStub.AddManager.SendWithExceptionAsync(new AddManagerInput()
+        var result = await CaContractStub.AddManagerInfo.SendWithExceptionAsync(new AddManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = manager
+            ManagerInfo = manager
         });
         result.TransactionResult.Error.ShouldContain("No Permission");
     }
 
     [Fact]
-    public async Task addManager_invalid_input()
+    public async Task addManagerInfo_invalid_input()
     {
         await CreateHolderDefault();
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
 
-        //input ManagerAddress is null
-        var txExecutionResult = await CaContractUser1Stub.AddManager.SendWithExceptionAsync(new AddManagerInput()
+        //input Address is null
+        var txExecutionResult = await CaContractUser1Stub.AddManagerInfo.SendWithExceptionAsync(
+            new AddManagerInfoInput()
+            {
+                CaHash = caInfo.CaHash,
+                ManagerInfo = new ManagerInfo()
+                {
+                    Address = null,
+                    ExtraData = "iphone14-2022"
+                }
+            });
+        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input manager");
+
+        //inout ExtraData is null
+        txExecutionResult = await CaContractUser1Stub.AddManagerInfo.SendWithExceptionAsync(new AddManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = new Manager()
+            ManagerInfo = new ManagerInfo()
             {
-                ManagerAddress = null,
-                DeviceString = "iphone14-2022"
+                Address = User2Address
             }
         });
         txExecutionResult.TransactionResult.Error.ShouldContain("invalid input manager");
 
-        //inout deviceString is null
-        txExecutionResult = await CaContractUser1Stub.AddManager.SendWithExceptionAsync(new AddManagerInput()
+        //inout ExtraData is ""
+        txExecutionResult = await CaContractUser1Stub.AddManagerInfo.SendWithExceptionAsync(new AddManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = new Manager()
+            ManagerInfo = new ManagerInfo()
             {
-                ManagerAddress = User2Address
-            }
-        });
-        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input manager");
-
-        //inout deviceString is ""
-        txExecutionResult = await CaContractUser1Stub.AddManager.SendWithExceptionAsync(new AddManagerInput()
-        {
-            CaHash = caInfo.CaHash,
-            Manager = new Manager()
-            {
-                ManagerAddress = User2Address,
-                DeviceString = ""
+                Address = User2Address,
+                ExtraData = ""
             }
         });
         txExecutionResult.TransactionResult.Error.ShouldContain("invalid input manager");
     }
 
     [Fact]
-    public async Task AddManager_Address_Exists()
+    public async Task AddManagerInfo_Address_Exists()
     {
         await CreateHolderDefault();
         var output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        var result = await CaContractUser1Stub.AddManager.SendWithExceptionAsync(new AddManagerInput
+        var result = await CaContractUser1Stub.AddManagerInfo.SendWithExceptionAsync(new AddManagerInfoInput
         {
             CaHash = output.CaHash,
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                DeviceString = "test",
-                ManagerAddress = User1Address
+                ExtraData = "test",
+                Address = User1Address
             }
         });
-        result.TransactionResult.Error.ShouldContain("Manager address exists");
+        result.TransactionResult.Error.ShouldContain("ManagerInfo address exists");
     }
 
     [Fact]
-    public async Task RemoveManager_ManagerAddressNotExits()
+    public async Task RemoveManagerInfo_AddressNotExits()
     {
         await CreateHolderDefault();
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        var manager = new Manager
+        var manager = new ManagerInfo
         {
-            ManagerAddress = User3Address,
-            DeviceString = "123"
+            Address = User3Address,
+            ExtraData = "123"
         };
-        await CaContractUser1Stub.RemoveManager.SendAsync(new RemoveManagerInput()
+        await CaContractUser1Stub.RemoveManagerInfo.SendAsync(new RemoveManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = manager
+            ManagerInfo = manager
         });
 
         caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        caInfo.Managers.Count.ShouldBe(1);
+        caInfo.ManagerInfos.Count.ShouldBe(1);
     }
 
 
     [Fact]
-    public async Task RemoveManagerTest()
+    public async Task RemoveManagerInfoTest()
     {
         await CreateHolderDefault();
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
         //caHolder not existed
-        var notExistedCash = HashHelper.ComputeFrom("Invalid CaHash");
-        var txExecutionResult = await CaContractUser1Stub.RemoveManager.SendWithExceptionAsync(new RemoveManagerInput()
-        {
-            CaHash = notExistedCash,
-            Manager = new Manager()
+        var notExistedCaHash = HashHelper.ComputeFrom("Invalid CaHash");
+        var txExecutionResult = await CaContractUser1Stub.RemoveManagerInfo.SendWithExceptionAsync(
+            new RemoveManagerInfoInput()
             {
-                ManagerAddress = User2Address,
-                DeviceString = "iphone14-2022"
-            }
-        });
+                CaHash = notExistedCaHash,
+                ManagerInfo = new ManagerInfo()
+                {
+                    Address = User2Address,
+                    ExtraData = "iphone14-2022"
+                }
+            });
         txExecutionResult.TransactionResult.Error.ShouldContain("CA holder is null.");
 
         //input caHash is null
-        txExecutionResult = await CaContractUser1Stub.RemoveManager.SendWithExceptionAsync(new RemoveManagerInput()
-        {
-            Manager = new Manager()
+        txExecutionResult = await CaContractUser1Stub.RemoveManagerInfo.SendWithExceptionAsync(
+            new RemoveManagerInfoInput()
             {
-                ManagerAddress = User2Address,
-                DeviceString = "iphone14-2022"
-            }
-        });
+                ManagerInfo = new ManagerInfo()
+                {
+                    Address = User2Address,
+                    ExtraData = "iphone14-2022"
+                }
+            });
         txExecutionResult.TransactionResult.Error.ShouldContain("invalid input CaHash");
 
         //input is null can not be 
-        /*var managerSendWithExceptionAsync = await CaContractUser1Stub.RemoveManager.SendWithExceptionAsync(null);
+        /*var managerSendWithExceptionAsync = await CaContractUser1Stub.RemoveManagerInfo.SendWithExceptionAsync(null);
         managerSendWithExceptionAsync.TransactionResult.Error.ShouldContain("invalid input");        */
 
-        //input DeviceString is null
-        txExecutionResult = await CaContractUser1Stub.RemoveManager.SendWithExceptionAsync(new RemoveManagerInput()
-        {
-            CaHash = caInfo.CaHash,
-            Manager = new Manager()
+        //input ExtraData is null
+        txExecutionResult = await CaContractUser1Stub.RemoveManagerInfo.SendWithExceptionAsync(
+            new RemoveManagerInfoInput()
             {
-                ManagerAddress = User2Address,
-            }
-        });
-        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input Manager");
+                CaHash = caInfo.CaHash,
+                ManagerInfo = new ManagerInfo()
+                {
+                    Address = User2Address,
+                }
+            });
+        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input ManagerInfo");
 
-        //input DeviceString is ""
-        txExecutionResult = await CaContractUser1Stub.RemoveManager.SendWithExceptionAsync(new RemoveManagerInput()
-        {
-            CaHash = caInfo.CaHash,
-            Manager = new Manager()
+        //input ExtraData is ""
+        txExecutionResult = await CaContractUser1Stub.RemoveManagerInfo.SendWithExceptionAsync(
+            new RemoveManagerInfoInput()
             {
-                ManagerAddress = User2Address,
-                DeviceString = ""
-            }
-        });
-        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input Manager");
+                CaHash = caInfo.CaHash,
+                ManagerInfo = new ManagerInfo()
+                {
+                    Address = User2Address,
+                    ExtraData = ""
+                }
+            });
+        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input ManagerInfo");
 
-        //input ManagerAddress is null
-        txExecutionResult = await CaContractUser1Stub.RemoveManager.SendWithExceptionAsync(new RemoveManagerInput()
-        {
-            CaHash = caInfo.CaHash,
-            Manager = new Manager()
+        //input Address is null
+        txExecutionResult = await CaContractUser1Stub.RemoveManagerInfo.SendWithExceptionAsync(
+            new RemoveManagerInfoInput()
             {
-                ManagerAddress = null,
-                DeviceString = "iphone14-2022"
-            }
-        });
-        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input Manager");
+                CaHash = caInfo.CaHash,
+                ManagerInfo = new ManagerInfo()
+                {
+                    Address = null,
+                    ExtraData = "iphone14-2022"
+                }
+            });
+        txExecutionResult.TransactionResult.Error.ShouldContain("invalid input ManagerInfo");
 
         //input manager is null
-        txExecutionResult = await CaContractUser1Stub.RemoveManager.SendWithExceptionAsync(new RemoveManagerInput()
-        {
-            CaHash = caInfo.CaHash
-        });
+        txExecutionResult = await CaContractUser1Stub.RemoveManagerInfo.SendWithExceptionAsync(
+            new RemoveManagerInfoInput()
+            {
+                CaHash = caInfo.CaHash
+            });
         txExecutionResult.TransactionResult.Error.ShouldContain("invalid input manager");
 
         //manager not exist
-        var txResult = await CaContractUser1Stub.RemoveManager.SendAsync(new RemoveManagerInput()
+        var txResult = await CaContractUser1Stub.RemoveManagerInfo.SendAsync(new RemoveManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = new Manager()
+            ManagerInfo = new ManagerInfo()
             {
-                ManagerAddress = User2Address,
-                DeviceString = "iphone14-2022"
+                Address = User2Address,
+                ExtraData = "iphone14-2022"
             }
         });
         txResult.TransactionResult.Status.ShouldBe(TransactionResultStatus.Mined);
 
         //success
-        var manager = new Manager
+        var manager = new ManagerInfo
         {
-            ManagerAddress = User1Address,
-            DeviceString = "123"
+            Address = User1Address,
+            ExtraData = "123"
         };
-        await CaContractUser1Stub.RemoveManager.SendAsync(new RemoveManagerInput()
+        await CaContractUser1Stub.RemoveManagerInfo.SendAsync(new RemoveManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = manager
+            ManagerInfo = manager
         });
 
         caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        caInfo.Managers.ShouldNotContain(manager);
+        caInfo.ManagerInfos.ShouldNotContain(manager);
         var delegateAllowance = await TokenContractStub.GetTransactionFeeDelegationsOfADelegatee.CallAsync(
             new GetTransactionFeeDelegationsOfADelegateeInput()
             {
@@ -1021,52 +1033,52 @@ public partial class CAContractTests : CAContractTestBase
     }
 
     [Fact]
-    public async Task RemoveManager_NoPermisson_Test()
+    public async Task RemoveManagerInfo_NoPermisson_Test()
     {
         await CreateHolderNoPermission();
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        var manager = new Manager
+        var manager = new ManagerInfo
         {
-            ManagerAddress = User3Address,
-            DeviceString = "123"
+            Address = User3Address,
+            ExtraData = "123"
         };
-        var result = await CaContractStub.RemoveManager.SendWithExceptionAsync(new RemoveManagerInput()
+        var result = await CaContractStub.RemoveManagerInfo.SendWithExceptionAsync(new RemoveManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = manager
+            ManagerInfo = manager
         });
         result.TransactionResult.Error.ShouldContain("No Permission");
     }
-    
+
     [Fact]
-    public async Task RemoveManager_DeviceStringNotMatch_Test()
+    public async Task RemoveManagerInfo_ExtraDataNotMatch_Test()
     {
         await CreateHolderDefault();
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        caInfo.Managers.Count.ShouldBe(1);
-        var manager = new Manager
+        caInfo.ManagerInfos.Count.ShouldBe(1);
+        var manager = new ManagerInfo
         {
-            ManagerAddress = User1Address,
-            DeviceString = "1234"
+            Address = User1Address,
+            ExtraData = "1234"
         };
-        var result = await CaContractUser1Stub.RemoveManager.SendAsync(new RemoveManagerInput()
+        var result = await CaContractUser1Stub.RemoveManagerInfo.SendAsync(new RemoveManagerInfoInput()
         {
             CaHash = caInfo.CaHash,
-            Manager = manager
+            ManagerInfo = manager
         });
         caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
-        caInfo.Managers.Count.ShouldBe(0);
+        caInfo.ManagerInfos.Count.ShouldBe(0);
     }
 
     private async Task CreateHolderNoPermission()
@@ -1081,44 +1093,44 @@ public partial class CAContractTests : CAContractTestBase
             {
                 Name = VerifierName,
                 ImageUrl = "url",
-                EndPoints = {"127.0.0.1"},
-                VerifierAddressList = {VerifierAddress}
+                EndPoints = { "127.0.0.1" },
+                VerifierAddressList = { VerifierAddress }
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName1,
                 ImageUrl = "url",
-                EndPoints = {"127.0.0.1"},
-                VerifierAddressList = {VerifierAddress1}
+                EndPoints = { "127.0.0.1" },
+                VerifierAddressList = { VerifierAddress1 }
             });
             await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
             {
                 Name = VerifierName2,
                 ImageUrl = "url",
-                EndPoints = {"127.0.0.1"},
-                VerifierAddressList = {VerifierAddress2}
+                EndPoints = { "127.0.0.1" },
+                VerifierAddressList = { VerifierAddress2 }
             });
         }
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput
         {
-            GuardianApproved = new GuardianAccountInfo
+            GuardianApproved = new GuardianInfo
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = id,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             },
-            Manager = new Manager
+            ManagerInfo = new ManagerInfo
             {
-                ManagerAddress = User1Address,
-                DeviceString = "123"
+                Address = User1Address,
+                ExtraData = "123"
             }
         });
     }

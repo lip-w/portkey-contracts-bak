@@ -9,154 +9,134 @@ namespace Portkey.Contracts.CA;
 
 public partial class CAContract
 {
-    public override Empty ValidateCAHolderInfoWithManagersExists(ValidateCAHolderInfoWithManagersExistsInput input)
+    public override Empty ValidateCAHolderInfoWithManagerInfosExists(
+        ValidateCAHolderInfoWithManagerInfosExistsInput input)
     {
         Assert(input != null, "input is null");
         Assert(input!.CaHash != null, "input.CaHash is null");
-        Assert(input.Managers != null, "input.Managers is null");
+        Assert(input.ManagerInfos != null, "input.ManagerInfos is null");
 
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Holder by ca_hash: {input.CaHash} is not found!");
 
-        ValidateLoginGuardianAccount(input.CaHash, holderInfo, input.LoginGuardianAccounts,
-            input.NotLoginGuardianAccounts);
+        ValidateLoginGuardian(input.CaHash, holderInfo, input.LoginGuardians,
+            input.NotLoginGuardians);
 
-        var managers = input.Managers!.Distinct().ToList();
+        var managerInfos = input.ManagerInfos!.Distinct().ToList();
 
-        Assert(holderInfo!.Managers.Count == managers.Count,
-            "Managers set is out of time! Please GetHolderInfo again.");
+        Assert(holderInfo!.ManagerInfos.Count == managerInfos.Count,
+            "ManagerInfos set is out of time! Please GetHolderInfo again.");
 
-        foreach (var manager in managers)
+        foreach (var managerInfo in managerInfos)
         {
-            if (!CAHolderContainsManager(holderInfo.Managers, manager))
+            if (!CAHolderContainsManagerInfo(holderInfo.ManagerInfos, managerInfo))
             {
                 Assert(false,
-                    $"Manager(address:{manager.ManagerAddress},device_string{manager.DeviceString}) is not in this CAHolder.");
+                    $"ManagerInfo(address:{managerInfo.Address},extra_data{managerInfo.ExtraData}) is not in this CAHolder.");
             }
         }
 
         return new Empty();
     }
 
-    private void ValidateLoginGuardianAccount(Hash caHash, HolderInfo holderInfo,
-        RepeatedField<string> loginGuardianAccountInput,
-        RepeatedField<string> notLoginGuardianAccountInput)
+    private void ValidateLoginGuardian(Hash caHash, HolderInfo holderInfo,
+        RepeatedField<Hash> loginGuardianInput,
+        RepeatedField<Hash> notLoginGuardianInput)
     {
-        var loginGuardians = new RepeatedField<string>();
-        foreach (var index in holderInfo.GuardiansInfo.LoginGuardianAccountIndexes)
+        var loginGuardians = new RepeatedField<Hash>();
+        loginGuardians.AddRange(holderInfo.GuardianList.Guardians.Where(g => g.IsLoginGuardian)
+            .Select(g => g.IdentifierHash));
+
+        var loginGuardianIdentifierHashList = loginGuardianInput.Distinct().ToList();
+
+        Assert(loginGuardians.Count == loginGuardianIdentifierHashList.Count,
+            "The amount of LoginGuardianInput not equals to HolderInfo's LoginGuardians");
+        
+        foreach (var loginGuardian in loginGuardianIdentifierHashList)
         {
-            loginGuardians.Add(holderInfo.GuardiansInfo.GuardianAccounts[index].Value);
-        }
-
-        var loginGuardianAccounts = loginGuardianAccountInput.ToList();
-        var notLoginGuardianAccounts = notLoginGuardianAccountInput.ToList();
-
-        Assert(loginGuardians.Count == loginGuardianAccounts.Count,
-            "The amount of LoginGuardianAccountInput not equals to HolderInfo's LoginGuardianAccounts");
-
-        foreach (var loginGuardianAccount in loginGuardianAccounts)
-        {
-            Assert(loginGuardians.Contains(loginGuardianAccount)
-                   && State.GuardianAccountMap[loginGuardianAccount] == caHash,
-                $"LoginGuardianAccount:{loginGuardianAccount} is not in HolderInfo's LoginGuardianAccounts");
+            Assert(loginGuardians.Contains(loginGuardian)
+                   && State.GuardianMap[loginGuardian] == caHash,
+                $"LoginGuardian:{loginGuardian} is not in HolderInfo's LoginGuardians");
         }
     }
 
     public override Empty SyncHolderInfo(SyncHolderInfoInput input)
     {
         var originalTransaction = MethodNameVerify(input.VerificationTransactionInfo,
-            nameof(ValidateCAHolderInfoWithManagersExists));
+            nameof(ValidateCAHolderInfoWithManagerInfosExists));
         var originalTransactionId = originalTransaction.GetHash();
 
         TransactionVerify(originalTransactionId, input.VerificationTransactionInfo.ParentChainHeight,
             input.VerificationTransactionInfo.FromChainId, input.VerificationTransactionInfo.MerklePath);
         var transactionInput =
-            ValidateCAHolderInfoWithManagersExistsInput.Parser.ParseFrom(originalTransaction.Params);
+            ValidateCAHolderInfoWithManagerInfosExistsInput.Parser.ParseFrom(originalTransaction.Params);
 
         var holderId = transactionInput.CaHash;
         var holderInfo = State.HolderInfoMap[holderId] ?? new HolderInfo { CreatorAddress = Context.Sender };
 
-        var managersToAdd = ManagersExcept(transactionInput.Managers, holderInfo.Managers);
-        var managersToRemove = ManagersExcept(holderInfo.Managers, transactionInput.Managers);
+        var managerInfosToAdd = ManagerInfosExcept(transactionInput.ManagerInfos, holderInfo.ManagerInfos);
+        var managerInfosToRemove = ManagerInfosExcept(holderInfo.ManagerInfos, transactionInput.ManagerInfos);
 
-        holderInfo.Managers.AddRange(managersToAdd);
-        SetDelegators(holderId, managersToAdd);
+        holderInfo.ManagerInfos.AddRange(managerInfosToAdd);
+        SetDelegators(holderId, managerInfosToAdd);
 
-        foreach (var manager in managersToAdd)
+        foreach (var managerInfo in managerInfosToAdd)
         {
-            SetContractDelegator(manager);
-        }
-        
-        foreach (var manager in managersToRemove)
-        {
-            holderInfo.Managers.Remove(manager);
+            SetContractDelegator(managerInfo);
         }
 
-        RemoveDelegators(holderId, managersToRemove);
+        foreach (var managerInfo in managerInfosToRemove)
+        {
+            holderInfo.ManagerInfos.Remove(managerInfo);
+        }
 
-        var loginGuardianAccountsAdded = SyncLoginGuardianAccountAdded(transactionInput.CaHash, transactionInput.LoginGuardianAccounts);
-        var loginGuardianAccountsUnbound = SyncLoginGuardianAccountUnbound(transactionInput.CaHash, transactionInput.NotLoginGuardianAccounts);
+        RemoveDelegators(holderId, managerInfosToRemove);
+
+        var loginGuardiansAdded = SyncLoginGuardianAdded(transactionInput.CaHash, transactionInput.LoginGuardians);
+        var loginGuardiansUnbound =
+            SyncLoginGuardianUnbound(transactionInput.CaHash, transactionInput.NotLoginGuardians);
 
         State.HolderInfoMap[holderId] = holderInfo;
-        
+
         Context.Fire(new CAHolderSynced
-        {   
+        {
             Creator = Context.Sender,
             CaHash = holderId,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(holderId),
-            ManagersAdded = new CAHolderManagerAddedSynced
+            ManagerInfosAdded = new CAHolderManagerInfoAddedSynced
             {
-                ManagersAdded = { managersToAdd }
+                ManagerInfosAdded = { managerInfosToAdd }
             },
-            ManagersRemoved = new CAHolderManagerRemovedSynced
+            ManagerInfosRemoved = new CAHolderManagerInfoRemovedSynced
             {
-                ManagersRemoved = { managersToRemove }
+                ManagerInfosRemoved = { managerInfosToRemove }
             },
-            LoginGuardianAccountsAdded = new CAHolderLoginGuardianAccountAddedSynced
+            LoginGuardiansAdded = new CAHolderLoginGuardianAddedSynced
             {
-                LoginGuardianAccountsAdded = { loginGuardianAccountsAdded }
+                LoginGuardiansAdded = { loginGuardiansAdded }
             },
-            LoginGuardianAccountsUnbound = new CAHolderLoginGuardianAccountUnboundSynced
+            LoginGuardiansUnbound = new CAHolderLoginGuardianUnboundSynced
             {
-                LoginGuardianAccountsUnbound = { loginGuardianAccountsUnbound }
+                LoginGuardiansUnbound = { loginGuardiansUnbound }
             }
         });
 
         return new Empty();
     }
 
-    private RepeatedField<string> SyncLoginGuardianAccountAdded(Hash caHash, RepeatedField<string> loginGuardianAccounts)
+    private RepeatedField<Hash> SyncLoginGuardianAdded(Hash caHash, RepeatedField<Hash> loginGuardians)
     {
-        var list = new RepeatedField<string>();
-        
-        if (loginGuardianAccounts != null)
-        {
-            foreach (var loginGuardianAccount in loginGuardianAccounts)
-            {
-                if (State.GuardianAccountMap[loginGuardianAccount] == null ||
-                    State.GuardianAccountMap[loginGuardianAccount] != caHash)
-                {
-                    State.GuardianAccountMap.Set(loginGuardianAccount, caHash);
-                    list.Add(loginGuardianAccount);
-                }
-            }
-        }
+        var list = new RepeatedField<Hash>();
 
-        return list;
-    }
-    
-    private RepeatedField<string> SyncLoginGuardianAccountUnbound(Hash caHash, RepeatedField<string> notLoginGuardianAccounts)
-    {
-        var list = new RepeatedField<string>();
-        
-        if (notLoginGuardianAccounts != null)
+        if (loginGuardians != null)
         {
-            foreach (var notLoginGuardianAccount in notLoginGuardianAccounts)
+            foreach (var loginGuardian in loginGuardians)
             {
-                if (State.GuardianAccountMap[notLoginGuardianAccount] == caHash)
+                if (State.GuardianMap[loginGuardian] == null ||
+                    State.GuardianMap[loginGuardian] != caHash)
                 {
-                    State.GuardianAccountMap.Remove(notLoginGuardianAccount);
-                    list.Add(notLoginGuardianAccount);
+                    State.GuardianMap.Set(loginGuardian, caHash);
+                    list.Add(loginGuardian);
                 }
             }
         }
@@ -164,16 +144,36 @@ public partial class CAContract
         return list;
     }
 
-    private RepeatedField<Manager> ManagersExcept(RepeatedField<Manager> set1, RepeatedField<Manager> set2)
+    private RepeatedField<Hash> SyncLoginGuardianUnbound(Hash caHash, RepeatedField<Hash> notLoginGuardians)
     {
-        RepeatedField<Manager> resultSet = new RepeatedField<Manager>();
+        var list = new RepeatedField<Hash>();
 
-        foreach (var manager1 in set1)
+        if (notLoginGuardians != null)
+        {
+            foreach (var notLoginGuardian in notLoginGuardians)
+            {
+                if (State.GuardianMap[notLoginGuardian] == caHash)
+                {
+                    State.GuardianMap.Remove(notLoginGuardian);
+                    list.Add(notLoginGuardian);
+                }
+            }
+        }
+
+        return list;
+    }
+
+    private RepeatedField<ManagerInfo> ManagerInfosExcept(RepeatedField<ManagerInfo> set1,
+        RepeatedField<ManagerInfo> set2)
+    {
+        RepeatedField<ManagerInfo> resultSet = new RepeatedField<ManagerInfo>();
+
+        foreach (var managerInfo1 in set1)
         {
             bool theSame = false;
-            foreach (var manager2 in set2)
+            foreach (var managerInfo2 in set2)
             {
-                if (manager1.ManagerAddress == manager2.ManagerAddress)
+                if (managerInfo1.Address == managerInfo2.Address)
                 {
                     theSame = true;
                     break;
@@ -182,7 +182,7 @@ public partial class CAContract
 
             if (!theSame)
             {
-                resultSet.Add(manager1);
+                resultSet.Add(managerInfo1);
             }
         }
 
@@ -214,12 +214,12 @@ public partial class CAContract
     }
 
 
-    private bool CAHolderContainsManager(RepeatedField<Manager> managers, Manager targetManager)
+    private bool CAHolderContainsManagerInfo(RepeatedField<ManagerInfo> managerInfos, ManagerInfo targetManagerInfo)
     {
-        foreach (var manager in managers)
+        foreach (var manager in managerInfos)
         {
-            if (manager.ManagerAddress == targetManager.ManagerAddress
-                && manager.DeviceString == targetManager.DeviceString)
+            if (manager.Address == targetManagerInfo.Address
+                && manager.ExtraData == targetManagerInfo.ExtraData)
             {
                 return true;
             }
