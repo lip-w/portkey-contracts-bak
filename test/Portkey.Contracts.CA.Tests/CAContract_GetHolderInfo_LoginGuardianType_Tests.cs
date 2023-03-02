@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf;
-using AElf.CSharp.Core;
 using AElf.Types;
-using Google.Protobuf.WellKnownTypes;
 using Shouldly;
 using Xunit;
 
@@ -23,44 +21,40 @@ public partial class CAContractTests : CAContractTestBase
             CaHash = caHash
         });
         getHolderInfoOutput.CaHash.ShouldBe(caHash);
-        getHolderInfoOutput.Managers[0].ManagerAddress.ShouldBe(User1Address);
-        getHolderInfoOutput.Managers[0].DeviceString.ShouldBe("123");
+        getHolderInfoOutput.ManagerInfos[0].Address.ShouldBe(User1Address);
+        getHolderInfoOutput.ManagerInfos[0].ExtraData.ShouldBe("123");
 
-        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
-        var guardians = guardiansInfo.GuardianAccounts;
+        var guardianList = getHolderInfoOutput.GuardianList;
+        var guardians = guardianList.Guardians;
         guardians.Count.ShouldBe(1);
-        guardians[0].Guardian.Type.ShouldBe(GuardianType.OfEmail);
-        guardians[0].Value.ShouldBe(GuardianAccount);
+        guardians[0].Type.ShouldBe(GuardianType.OfEmail);
+        guardians[0].IdentifierHash.ShouldBe(_guardian);
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-        guardiansInfo.LoginGuardianAccountIndexes.Contains(0);
+        GetLoginGuardianCount(guardianList).ShouldBe(1);
     }
 
     [Fact]
     public async Task GetHolderInfo_ByLoginGuardian_Test()
     {
         var caHash = await CreateHolder();
-        var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
-        var id = verifierServer.VerifierServers[0].Id;
 
         var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = null,
-            LoginGuardianAccount = GuardianAccount
+            LoginGuardianIdentifierHash = _guardian
         });
 
         getHolderInfoOutput.CaHash.ShouldBe(caHash);
-        getHolderInfoOutput.Managers[0].ManagerAddress.ShouldBe(User1Address);
-        getHolderInfoOutput.Managers[0].DeviceString.ShouldBe("123");
-        var guardiansInfo = getHolderInfoOutput.GuardiansInfo;
-        var guardians = guardiansInfo.GuardianAccounts;
+        getHolderInfoOutput.ManagerInfos[0].Address.ShouldBe(User1Address);
+        getHolderInfoOutput.ManagerInfos[0].ExtraData.ShouldBe("123");
+        var guardianList = getHolderInfoOutput.GuardianList;
+        var guardians = guardianList.Guardians;
 
         guardians.Count.ShouldBe(1);
-        guardians[0].Guardian.Type.ShouldBe(GuardianType.OfEmail);
-        guardians[0].Value.ShouldBe(GuardianAccount);
+        guardians[0].Type.ShouldBe(GuardianType.OfEmail);
+        guardians[0].IdentifierHash.ShouldBe(_guardian);
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-        guardiansInfo.LoginGuardianAccountIndexes.Contains(0);
+        GetLoginGuardianCount(guardianList).ShouldBe(1);
     }
 
     [Fact]
@@ -71,10 +65,10 @@ public partial class CAContractTests : CAContractTestBase
         var executionResult = await CaContractStub.GetHolderInfo.CallWithExceptionAsync(new GetHolderInfoInput
         {
             CaHash = null,
-            LoginGuardianAccount = ""
+            LoginGuardianIdentifierHash = null
         });
 
-        executionResult.Value.ShouldContain("CaHash is null, or loginGuardianAccount is empty: , ");
+        executionResult.Value.ShouldContain("CaHash is null, or loginGuardianIdentifierHash is empty: , ");
     }
 
     [Fact]
@@ -91,114 +85,96 @@ public partial class CAContractTests : CAContractTestBase
     }
 
     [Fact]
-    public async Task GetHolderInfo_ByInvalidLoginGuardianAccount_Test()
+    public async Task GetHolderInfo_ByInvalidLoginGuardianIdentifierHash_Test()
     {
         await CreateHolder();
 
-        var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
-        var id = verifierServer.VerifierServers[0].Id;
+        var hash = HashHelper.ComputeFrom("Invalid");
         var executionResult = await CaContractStub.GetHolderInfo.CallWithExceptionAsync(new GetHolderInfoInput
         {
             CaHash = null,
-            LoginGuardianAccount = "Invalid"
+            LoginGuardianIdentifierHash = hash
         });
 
-        executionResult.Value.ShouldContain("Not found ca_hash by a the loginGuardianAccount Invalid");
+        executionResult.Value.ShouldContain($"Not found ca_hash by a the loginGuardianIdentifierHash {hash}");
     }
 
     [Fact]
-    public async Task SetLoginGuardianAccount_Succeed_Test()
+    public async Task SetLoginGuardian_Succeed_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
-        var guardians = guardiansInfo.GuardianAccounts;
+        var guardianList = getHolderInfoOutput.GuardianList;
+        var guardians = guardianList.Guardians;
         guardians.Count.ShouldBe(2);
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(1);
 
-        getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
 
-        var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
-        var id = verifierServer.VerifierServers[0].Id;
-        var id2 = verifierServer.VerifierServers[1].Id;
+        // check loginGuardianIdentifierHash -> caHash mapping
+        getHolderInfoOutput = await GetHolderInfo_Helper(null, _guardian);
+        guardianList = getHolderInfoOutput.GuardianList;
+        guardianList.ShouldNotBeNull();
 
-        // check loginGuardianType -> caHash mapping
-        getHolderInfoOutput = await GetHolderInfo_Helper(null, GuardianAccount);
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
-        guardiansInfo.ShouldNotBeNull();
-
-        getHolderInfoOutput = await GetHolderInfo_Helper(null, GuardianAccount1);
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
-        guardiansInfo.ShouldNotBeNull();
+        getHolderInfoOutput = await GetHolderInfo_Helper(null, _guardian1);
+        guardianList = getHolderInfoOutput.GuardianList;
+        guardianList.ShouldNotBeNull();
     }
 
     [Fact]
-    public async Task SetLoginGuardianAccount_Again_Succeed_Test()
+    public async Task SetLoginGuardian_Again_Succeed_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
-        var guardians = guardiansInfo.GuardianAccounts;
+        var guardianList = getHolderInfoOutput.GuardianList;
+        var guardians = guardianList.Guardians;
         guardians.Count.ShouldBe(2);
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(1);
 
-        getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
 
-        getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
     }
 
     [Fact]
-    public async Task SetLoginGuardianAccount_CashNull_Test()
+    public async Task SetLoginGuardian_CaHashNull_Test()
     {
-        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
+        await CreateCAHolder_AndGetCaHash_Helper();
 
 
-        var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
-            new SetGuardianAccountForLoginInput
+        var executionResult = await CaContractStub.SetGuardianForLogin.SendWithExceptionAsync(
+            new SetGuardianForLoginInput
             {
                 CaHash = null,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier()
-                    },
-                    Value = GuardianAccount1
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierIdEmpty,
+                    IdentifierHash = _guardian1
                 }
             });
 
@@ -206,21 +182,18 @@ public partial class CAContractTests : CAContractTestBase
     }
 
     [Fact]
-    public async Task SetLoginGuardianAccount_CashNotExits_Test()
+    public async Task SetLoginGuardian_CaHashNotExits_Test()
     {
-        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
-        var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
-            new SetGuardianAccountForLoginInput()
+        await CreateCAHolder_AndGetCaHash_Helper();
+        var executionResult = await CaContractStub.SetGuardianForLogin.SendWithExceptionAsync(
+            new SetGuardianForLoginInput
             {
                 CaHash = HashHelper.ComputeFrom("123"),
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier()
-                    },
-                    Value = GuardianAccount1
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierIdEmpty,
+                    IdentifierHash = _guardian1
                 }
             });
 
@@ -228,96 +201,85 @@ public partial class CAContractTests : CAContractTestBase
     }
 
     [Fact]
-    public async Task SetLoginGuardianAccount_GuardianTypeNull_Test()
+    public async Task SetLoginGuardian_GuardianNull_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
-        var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
-            new SetGuardianAccountForLoginInput()
+        var executionResult = await CaContractStub.SetGuardianForLogin.SendWithExceptionAsync(
+            new SetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = null
+                Guardian = null
             });
 
         executionResult.TransactionResult.Error.ShouldNotBeNull();
     }
 
     [Fact]
-    public async Task SetLoginGuardianAccount_GuardianTypeEmpty_Test()
+    public async Task SetLoginGuardian_GuardianIdentifierHashEmpty_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
 
-        var executionResult = await CaContractStub.SetGuardianAccountForLogin.SendWithExceptionAsync(
-            new SetGuardianAccountForLoginInput()
+        var executionResult = await CaContractStub.SetGuardianForLogin.SendWithExceptionAsync(
+            new SetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier()
-                    },
-                    Value = ""
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierIdEmpty,
+                    IdentifierHash = null
                 }
             });
 
-        executionResult.TransactionResult.Error.ShouldContain("Guardian account should not be null");
+        executionResult.TransactionResult.Error.ShouldContain("Guardian IdentifierHash should not be null");
     }
 
     [Fact]
-    public async Task SetLoginGuardianAccount_GuardianTypeNotExists_Test()
+    public async Task SetLoginGuardian_GuardianNotExists_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var guardianAccount = new GuardianAccount
+        var guardian = new Guardian
         {
-            Guardian = new Guardian
-            {
-                Type = GuardianType.OfEmail,
-                Verifier = new Verifier
-                {
-                    Id = _verifierId
-                }
-            },
-            Value = GuardianAccountNotExist
+            Type = GuardianType.OfEmail,
+            VerifierId = _verifierId,
+            IdentifierHash = _guardianNotExist,
+            Salt = Salt
         };
 
-        var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, guardianAccount);
+        var getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, guardian);
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.GuardianAccounts.Count.ShouldBe(2);
-        guardiansInfo.GuardianAccounts[0].Value.ShouldNotContain(GuardianAccountNotExist);
+        GetLoginGuardianCount(guardianList).ShouldBe(1);
+        guardianList.Guardians.Count.ShouldBe(2);
+        guardianList.Guardians[0].IdentifierHash.ShouldBe(_guardian);
     }
 
 
     /*[Fact]
-public async Task SetLoginGuardianAccount_RegisterByOthers()
+public async Task SetLoginGuardian_RegisterByOthers()
 {
-    var caHash = await CreateAHolder_AndGetCash_Helper();
+    var caHash = await CreateAHolder_AndGetCaHash_Helper();
    
     var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
     {
         CaHash = caHash,
-        LoginGuardianAccount = ""
+        LoginGuardian = null
     });
    
-    var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
-    var guardians = guardiansInfo.Guardians;
+    var guardianList = getHolderInfoOutput.Output.GuardianList;
+    var guardians = guardianList.Guardians;
     guardians.Count.ShouldBe(2);
    
-    guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-    guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-    guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
+    GetLoginGuardianCount(guardianList).ShouldBe(1);
     var guardianType = new GuardianType
     {
         Type = GuardianTypeType.GuardianTypeOfEmail,
         GuardianType_ = GuardianType1
     };
-    getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, guardianType);
+    getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, guardianType);
     var verificationTime = DateTime.UtcNow;
     var signature1 = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianType, 0);
     await CaContractStub.CreateCAHolder.SendAsync(new CreateCAHolderInput
@@ -329,189 +291,231 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
             {
                 Name = VerifierName,
                 Signature = signature1,
-                VerificationDoc = $"{0},{GuardianType},{verificationTime},{VerifierAddress.ToBase58()}"
+                VerificationDoc = $"{0},{GuardianType.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
             }
         },
         Manager = new Manager
         {
-            ManagerAddress = User1Address,
-            DeviceString = "123"
+            Address = User1Address,
+            ExtraData = "123"
         }
     });
-    var caHolderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
+    var caHolderInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
     {
-        LoginGuardianAccount = GuardianType
+        LoginGuardian = GuardianType
     });
-    await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHolderInfo.CaHash, guardianType);
-    caHolderInfo.Managers.Count.ShouldBe(2);
-    caHolderInfo.GuardiansInfo.Guardians.Count.ShouldBe(2);
+    await SetGuardianForLogin_AndGetHolderInfo_Helper(caHolderInfo.CaHash, guardianType);
+    caHolderInfo.ManagerInfos.Count.ShouldBe(2);
+    caHolderInfo.GuardianList.Guardians.Count.ShouldBe(2);
 
 }*/
 
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_Succeed_Test()
+    public async Task UnsetLoginGuardian_Succeed_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
+        var verificationTime = DateTime.UtcNow;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
+        var signature1 =
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, _guardian1, 0);
+        var signature2 =
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, _guardian1, 0);
+        var guardianApprove = new List<GuardianInfo>
+        {
+            new()
+            {
+                Type = GuardianType.OfEmail,
+                IdentifierHash = _guardian,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId,
+                    Signature = signature,
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
+                }
+            },
+            new()
+            {
+                Type = GuardianType.OfEmail,
+                IdentifierHash = _guardian1,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId1,
+                    Signature = signature1,
+                    VerificationDoc =
+                        $"{0},{_guardian1.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
+                }
+            }
+        };
 
-        var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        await CaContractStub.AddGuardian.SendAsync(new AddGuardianInput
+        {
+            CaHash = caHash,
+            GuardianToAdd = new GuardianInfo
+            {
+                IdentifierHash = _guardian1,
+                Type = GuardianType.OfEmail,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId2,
+                    Signature = signature2,
+                    VerificationDoc =
+                        $"{0},{_guardian1.ToHex()},{verificationTime},{VerifierAddress2.ToBase58()},{Salt}"
+                }
+            },
+            GuardiansApproved = { guardianApprove }
+        });
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        await CaContractStub.SetGuardianForLogin.SendAsync(new SetGuardianForLoginInput
+        {
+            CaHash = caHash,
+            Guardian = new Guardian
+            {
+                IdentifierHash = _guardian1,
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId2
+            }
+        });
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        var getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        getHolderInfoOutput = await UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        var guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        GetLoginGuardianCount(guardianList).ShouldBe(3);
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
+        await UnsetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        // check loginGuardianType mapping is removed.
+        await CaContractStub.UnsetGuardianForLogin.SendAsync(new UnsetGuardianForLoginInput
+        {
+            CaHash = caHash,
+            Guardian = new Guardian
+            {
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId,
+                IdentifierHash = _guardian
+            }
+        });
+
+        getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            LoginGuardianIdentifierHash = _guardian1
+        });
+        guardianList = getHolderInfoOutput.GuardianList;
+
+        GetLoginGuardianCount(guardianList).ShouldBe(1);
+
+        // check loginGuardianIdentifierHash mapping is removed.
         var executionResult = await CaContractStub.GetHolderInfo.CallWithExceptionAsync(new GetHolderInfoInput
         {
             CaHash = null,
-            LoginGuardianAccount = GuardianAccount1
+            LoginGuardianIdentifierHash = _guardian
         });
 
-        executionResult.Value.ShouldContain("Not found ca_hash by a the loginGuardianAccount");
+        executionResult.Value.ShouldContain("Not found ca_hash by a the loginGuardianIdentifierHash");
     }
 
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_GuardianTypeNotIn_Test()
+    public async Task UnsetLoginGuardian_GuardianIdentifierHashNotIn_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        var getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
 
-        await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(new UnsetGuardianAccountForLoginInput
+        await CaContractStub.UnsetGuardianForLogin.SendAsync(new UnsetGuardianForLoginInput
         {
             CaHash = caHash,
-            GuardianAccount = new GuardianAccount
+            Guardian = new Guardian
             {
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier()
-                },
-                Value = GuardianAccountNotExist
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierIdEmpty,
+                IdentifierHash = _guardianNotExist
             }
         });
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        guardianList = getHolderInfoOutput.GuardianList;
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
     }
 
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_Again_Succeed_Test()
+    public async Task UnsetLoginGuardian_Again_Succeed_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Multi_Helper();
 
-        var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        var getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+        await CaContractStub.SetGuardianForLogin.SendAsync(new SetGuardianForLoginInput
         {
             CaHash = caHash,
-            GuardianAccount = new GuardianAccount
+            Guardian = new Guardian
             {
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = _verifierId1
-                    }
-                },
-                Value = GuardianAccount
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId1,
+                IdentifierHash = _guardian
             }
         });
 
-        getHolderInfoOutput = await GetHolderInfo_Helper(caHash, "");
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        getHolderInfoOutput = await GetHolderInfo_Helper(caHash, null);
+        var guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(3);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(3);
 
-        getHolderInfoOutput = await UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        getHolderInfoOutput = await UnsetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
 
-        await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(
-            new UnsetGuardianAccountForLoginInput
+        await CaContractStub.UnsetGuardianForLogin.SendAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier
-                        {
-                            Id = _verifierId1
-                        }
-                    },
-                    Value = GuardianAccount1
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierId1,
+                    IdentifierHash = _guardian1
                 }
             });
-        getHolderInfoOutput = await GetHolderInfo_Helper(caHash, "");
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        getHolderInfoOutput = await GetHolderInfo_Helper(caHash, null);
+        guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
     }
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_CaHashNull_Test()
+    public async Task UnsetLoginGuardian_CaHashNull_Test()
     {
-        var caHash = await CreateCAHolder_AndGetCaHash_Helper();
-        var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
-            new UnsetGuardianAccountForLoginInput
+        await CreateCAHolder_AndGetCaHash_Helper();
+        var executionResult = await CaContractStub.UnsetGuardianForLogin.SendWithExceptionAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = null,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier()
-                    },
-                    Value = GuardianAccount1
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierIdEmpty,
+                    IdentifierHash = _guardian1
                 }
             });
 
         executionResult.TransactionResult.Error.ShouldNotBeNull();
 
-        var result = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
-            new UnsetGuardianAccountForLoginInput
+        var result = await CaContractStub.UnsetGuardianForLogin.SendWithExceptionAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = HashHelper.ComputeFrom("123"),
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier()
-                    },
-                    Value = GuardianAccount1
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierIdEmpty,
+                    IdentifierHash = _guardian1
                 }
             });
 
@@ -519,16 +523,16 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     }
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_GuardianTypeNull_Test()
+    public async Task UnsetLoginGuardian_GuardianNull_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
 
-        var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
-            new UnsetGuardianAccountForLoginInput
+        var executionResult = await CaContractStub.UnsetGuardianForLogin.SendWithExceptionAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = null
+                Guardian = null
             });
 
         executionResult.TransactionResult.Error.ShouldNotBeNull();
@@ -536,62 +540,48 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
 
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_FailedUniqueLoginGuardianType_Test()
+    public async Task UnsetLoginGuardian_FailedUniqueLoginGuardianIdentifierHash_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
 
-        var getHolderInfoOutput = await SetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        var getHolderInfoOutput = await SetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        var guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        var guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(2);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(2);
 
-        getHolderInfoOutput = await UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(caHash, null);
+        getHolderInfoOutput = await UnsetGuardianForLogin_AndGetHolderInfo_Helper(caHash, null);
 
-        guardiansInfo = getHolderInfoOutput.Output.GuardiansInfo;
+        guardianList = getHolderInfoOutput.GuardianList;
 
-        guardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(1);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldContain(0);
-        guardiansInfo.LoginGuardianAccountIndexes.ShouldNotContain(1);
+        GetLoginGuardianCount(guardianList).ShouldBe(1);
 
-        var result = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
-            new UnsetGuardianAccountForLoginInput
+        var result = await CaContractStub.UnsetGuardianForLogin.SendWithExceptionAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Value = GuardianAccount,
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier
-                        {
-                            Id = _verifierId
-                        }
-                    }
+                    IdentifierHash = _guardian,
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierId
                 }
             });
         result.TransactionResult.Error.ShouldContain("only one LoginGuardian,can not be Unset");
     }
 
-
     [Fact]
-    public async Task UnsetLoginGuardianAccount_GuardianTypeEmpty_Test()
+    public async Task UnsetLoginGuardian_GuardianIdentifierHashEmpty_Test()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
-        var executionResult = await CaContractStub.UnsetGuardianAccountForLogin.SendWithExceptionAsync(
-            new UnsetGuardianAccountForLoginInput
+        var executionResult = await CaContractStub.UnsetGuardianForLogin.SendWithExceptionAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Value = "",
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail
-                    }
+                    IdentifierHash = null,
+                    Type = GuardianType.OfEmail
                 }
             });
 
@@ -599,184 +589,154 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     }
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_GuardianAccountNotExitsTest()
+    public async Task UnsetLoginGuardian_GuardianNotExitsTest()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Helper();
-        await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+        await CaContractStub.SetGuardianForLogin.SendAsync(new SetGuardianForLoginInput
         {
             CaHash = caHash,
-            GuardianAccount = new GuardianAccount
+            Guardian = new Guardian
             {
-                Value = GuardianAccount1,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = _verifierId1
-                    }
-                }
+                IdentifierHash = _guardian1,
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId1
             }
         });
-        var result = await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(
-            new UnsetGuardianAccountForLoginInput
+        var result = await CaContractStub.UnsetGuardianForLogin.SendAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Value = "1111@gmail.com",
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier
-                        {
-                            Id = _verifierId2
-                        }
-                    }
+                    IdentifierHash = HashHelper.ComputeFrom("1111@gmail.com"),
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierId2
                 }
             });
         var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
-        getHolderInfoOutput.GuardiansInfo.GuardianAccounts.Count.ShouldBe(2);
+        getHolderInfoOutput.GuardianList.Guardians.Count.ShouldBe(2);
     }
 
     [Fact]
-    public async Task UnsetLoginGuardianAccount_GuardianAccountMultiTest()
+    public async Task UnsetLoginGuardian_GuardianMultiTest()
     {
         var caHash = await CreateCAHolder_AndGetCaHash_Multi_Helper();
-        await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+        var output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash,
-            GuardianAccount = new GuardianAccount
-            {
-                Value = GuardianAccount1,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = _verifierId1
-                    }
-                }
-            }
+            LoginGuardianIdentifierHash = null
         });
-        await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+        await CaContractStub.SetGuardianForLogin.SendAsync(new SetGuardianForLoginInput
         {
             CaHash = caHash,
-            GuardianAccount = new GuardianAccount
+            Guardian = new Guardian
             {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = _verifierId1
-                    }
-                }
+                IdentifierHash = _guardian1,
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId1
             }
         });
-        await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash,
-            GuardianAccount = new GuardianAccount
+            LoginGuardianIdentifierHash = null
+        });
+        await CaContractStub.SetGuardianForLogin.SendAsync(new SetGuardianForLoginInput
+        {
+            CaHash = caHash,
+            Guardian = new Guardian
             {
-                Value = GuardianAccount,
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = _verifierId2
-                    }
-                }
+                IdentifierHash = _guardian,
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId1
             }
         });
-        var result = await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(
-            new UnsetGuardianAccountForLoginInput
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = null
+        });
+        await CaContractStub.SetGuardianForLogin.SendAsync(new SetGuardianForLoginInput
+        {
+            CaHash = caHash,
+            Guardian = new Guardian
+            {
+                IdentifierHash = _guardian,
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId2
+            }
+        });
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = null
+        });
+        var result = await CaContractStub.UnsetGuardianForLogin.SendAsync(
+            new UnsetGuardianForLoginInput
             {
                 CaHash = caHash,
-                GuardianAccount = new GuardianAccount
+                Guardian = new Guardian
                 {
-                    Value = GuardianAccount,
-                    Guardian = new Guardian
-                    {
-                        Type = GuardianType.OfEmail,
-                        Verifier = new Verifier
-                        {
-                            Id = _verifierId1
-                        }
-                    }
+                    IdentifierHash = _guardian,
+                    Type = GuardianType.OfEmail,
+                    VerifierId = _verifierId1
                 }
             });
         var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
-        getHolderInfoOutput.GuardiansInfo.LoginGuardianAccountIndexes.Count.ShouldBe(3);
-        getHolderInfoOutput.GuardiansInfo.LoginGuardianAccountIndexes[0].ShouldBe(0);
-        getHolderInfoOutput.GuardiansInfo.LoginGuardianAccountIndexes[1].ShouldBe(1);
-        getHolderInfoOutput.GuardiansInfo.LoginGuardianAccountIndexes[2].ShouldBe(3);
+        GetLoginGuardianCount(getHolderInfoOutput.GuardianList).ShouldBe(3);
     }
 
-    private async Task<IExecutionResult<GetHolderInfoOutput>> SetGuardianAccountForLogin_AndGetHolderInfo_Helper(
-        Hash caHash, GuardianAccount guardianAccount)
+    private async Task<GetHolderInfoOutput> SetGuardianForLogin_AndGetHolderInfo_Helper(
+        Hash caHash, Guardian guardian)
     {
-        await CaContractStub.SetGuardianAccountForLogin.SendAsync(new SetGuardianAccountForLoginInput
+        await CaContractStub.SetGuardianForLogin.SendAsync(new SetGuardianForLoginInput
         {
             CaHash = caHash,
-            GuardianAccount = guardianAccount ?? new GuardianAccount
+            Guardian = guardian ?? new Guardian
             {
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = _verifierId1
-                    }
-                },
-                Value = GuardianAccount1
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId1,
+                IdentifierHash = _guardian1,
+                Salt = Salt
             }
         });
 
-        return await GetHolderInfo_Helper(caHash, "");
+        return await GetHolderInfo_Helper(caHash, null);
     }
 
-    private async Task<IExecutionResult<GetHolderInfoOutput>> GetHolderInfo_Helper(Hash caHash,
-        string loginGuardianType)
+    private async Task<GetHolderInfoOutput> GetHolderInfo_Helper(Hash caHash,
+        Hash loginGuardianIdentifierHash)
     {
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash,
-            LoginGuardianAccount = loginGuardianType
+            LoginGuardianIdentifierHash = loginGuardianIdentifierHash
         });
 
         return getHolderInfoOutput;
     }
 
-    private async Task<IExecutionResult<GetHolderInfoOutput>> UnsetGuardianAccountForLogin_AndGetHolderInfo_Helper(
-        Hash caHash, GuardianAccount guardianAccount)
+    private async Task<GetHolderInfoOutput> UnsetGuardianForLogin_AndGetHolderInfo_Helper(
+        Hash caHash, Guardian guardian)
     {
-        await CaContractStub.UnsetGuardianAccountForLogin.SendAsync(new UnsetGuardianAccountForLoginInput
+        await CaContractStub.UnsetGuardianForLogin.SendAsync(new UnsetGuardianForLoginInput
         {
             CaHash = caHash,
-            GuardianAccount = guardianAccount ?? new GuardianAccount
+            Guardian = guardian ?? new Guardian
             {
-                Guardian = new Guardian
-                {
-                    Type = GuardianType.OfEmail,
-                    Verifier = new Verifier
-                    {
-                        Id = _verifierId1
-                    }
-                },
-                Value = GuardianAccount1
+                Type = GuardianType.OfEmail,
+                VerifierId = _verifierId1,
+                IdentifierHash = _guardian1,
             }
         });
 
-        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.SendAsync(new GetHolderInfoInput
+        var getHolderInfoOutput = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
         {
             CaHash = caHash
         });
@@ -806,38 +766,40 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
     private async Task AddAGuardian_Helper(Hash caHash)
     {
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var signature1 =
-            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
-        var guardianApprove = new List<GuardianAccountInfo>
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, _guardian1, 0);
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
         var input = new AddGuardianInput
         {
             CaHash = caHash,
-            GuardianToAdd = new GuardianAccountInfo
+            GuardianToAdd = new GuardianInfo
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount1,
+                IdentifierHash = _guardian1,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId1,
                     Signature = signature1,
-                    VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian1.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
                 }
             },
-            GuardiansApproved = {guardianApprove}
+            GuardiansApproved = { guardianApprove }
         };
         await CaContractStub.AddGuardian.SendAsync(input);
         {
@@ -845,145 +807,159 @@ public async Task SetLoginGuardianAccount_RegisterByOthers()
             {
                 CaHash = caHash
             });
-            holderInfo.GuardiansInfo.GuardianAccounts.Last().Value.ShouldBe(GuardianAccount1);
+            holderInfo.GuardianList.Guardians.Last().IdentifierHash.ShouldBe(_guardian1);
         }
     }
 
     private async Task AddAGuardian_Helper_Multi(Hash caHash)
     {
         var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, GuardianAccount, 0);
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var signature1 =
-            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount1, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, _guardian1, 0);
         var signature01 =
-            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, GuardianAccount, 0);
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, _guardian, 0);
         var signature02 =
-            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, GuardianAccount, 0);
-        var guardianApprove = new List<GuardianAccountInfo>
+            GenerateSignature(VerifierKeyPair2, VerifierAddress2, verificationTime, _guardian, 0);
+        var guardianApprove = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             }
         };
         var input = new AddGuardianInput
         {
             CaHash = caHash,
-            GuardianToAdd = new GuardianAccountInfo
+            GuardianToAdd = new GuardianInfo
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount1,
+                IdentifierHash = _guardian1,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId1,
                     Signature = signature1,
-                    VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian1.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
                 }
             },
-            GuardiansApproved = {guardianApprove}
+            GuardiansApproved = { guardianApprove }
         };
         await CaContractStub.AddGuardian.SendAsync(input);
-        var guardianApprove1 = new List<GuardianAccountInfo>
+        var guardianApprove1 = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             },
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount1,
+                IdentifierHash = _guardian1,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId1,
                     Signature = signature1,
-                    VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian1.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
                 }
             }
         };
         var input1 = new AddGuardianInput
         {
             CaHash = caHash,
-            GuardianToAdd = new GuardianAccountInfo
+            GuardianToAdd = new GuardianInfo
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId1,
                     Signature = signature01,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress1.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
                 }
             },
-            GuardiansApproved = {guardianApprove1}
+            GuardiansApproved = { guardianApprove1 }
         };
         await CaContractStub.AddGuardian.SendAsync(input1);
-        var guardianApprove2 = new List<GuardianAccountInfo>
+        var guardianApprove2 = new List<GuardianInfo>
         {
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId,
                     Signature = signature,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
                 }
             },
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount1,
+                IdentifierHash = _guardian1,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId1,
                     Signature = signature1,
-                    VerificationDoc = $"{0},{GuardianAccount1},{verificationTime},{VerifierAddress1.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian1.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
                 }
             },
             new()
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId1,
                     Signature = signature01,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress1.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
                 }
             }
         };
         var input2 = new AddGuardianInput
         {
             CaHash = caHash,
-            GuardianToAdd = new GuardianAccountInfo
+            GuardianToAdd = new GuardianInfo
             {
                 Type = GuardianType.OfEmail,
-                Value = GuardianAccount,
+                IdentifierHash = _guardian,
                 VerificationInfo = new VerificationInfo
                 {
                     Id = _verifierId2,
                     Signature = signature02,
-                    VerificationDoc = $"{0},{GuardianAccount},{verificationTime},{VerifierAddress2.ToBase58()}"
+                    VerificationDoc =
+                        $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress2.ToBase58()},{Salt}"
                 }
             },
-            GuardiansApproved = {guardianApprove2}
+            GuardiansApproved = { guardianApprove2 }
         };
         await CaContractStub.AddGuardian.SendAsync(input2);
+    }
+
+    private int GetLoginGuardianCount(GuardianList list)
+    {
+        return list.Guardians.Where(g => g.IsLoginGuardian).ToList().Count;
     }
 }

@@ -14,16 +14,15 @@ public partial class CAContract
         Assert(input.CaHash != null && input.GuardianToAdd != null && input.GuardiansApproved.Count != 0,
             "Invalid input.");
         Assert(State.HolderInfoMap[input.CaHash] != null, "CA holder does not exist.");
-        Assert(State.HolderInfoMap[input.CaHash].GuardiansInfo != null, "No guardians under the holder.");
-        CheckManagerPermission(input.CaHash, Context.Sender);
+        Assert(State.HolderInfoMap[input.CaHash].GuardianList != null, "No guardians under the holder.");
+        CheckManagerInfoPermission(input.CaHash, Context.Sender);
         var holderInfo = State.HolderInfoMap[input.CaHash];
 
-        //Whether the guardian account to be added has already in the holder info.
-        //Filter: guardianAccount.type && guardianAccount.value && Verifier.Id
-        var toAddGuardian = holderInfo.GuardiansInfo.GuardianAccounts.FirstOrDefault(g =>
-            g.Guardian.Type == input.GuardianToAdd.Type &&
-            g.Value == input.GuardianToAdd.Value &&
-            g.Guardian.Verifier.Id == input.GuardianToAdd.VerificationInfo.Id);
+        //Whether the guardian to be added has already in the holder info.
+        //Filter: guardian.type && guardian.IdentifierHash && VerifierId
+        var toAddGuardian = holderInfo.GuardianList.Guardians.FirstOrDefault(g =>
+            g.Type == input.GuardianToAdd.Type && g.IdentifierHash == input.GuardianToAdd.IdentifierHash &&
+            g.VerifierId == input.GuardianToAdd.VerificationInfo.Id);
 
         if (toAddGuardian != null)
         {
@@ -34,7 +33,8 @@ public partial class CAContract
         Assert(CheckVerifierSignatureAndData(input.GuardianToAdd), "Guardian to add verification failed.");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
+        var guardianApprovedList = input.GuardiansApproved
+            .DistinctBy(g => $"{g.Type}{g.IdentifierHash}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
@@ -49,26 +49,20 @@ public partial class CAContract
         }
 
         //Whether the approved guardians count is satisfied.
-        IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count, guardianApprovedAmount,
+        IsJudgementStrategySatisfied(holderInfo.GuardianList.Guardians.Count, guardianApprovedAmount,
             holderInfo.JudgementStrategy);
 
-        //var loginGuardianAccounts = GetLoginGuardianAccounts(holderInfo.GuardiansInfo);
+        //var loginGuardians = GetLoginGuardians(holderInfo.GuardianList);
 
-        var guardianAdded = new GuardianAccount
+        var guardianAdded = new Guardian
         {
-            Value = input.GuardianToAdd.Value,
-            Guardian = new Guardian
-            {
-                Type = input.GuardianToAdd.Type,
-                Verifier = new Verifier
-                {
-                    Id = input.GuardianToAdd.VerificationInfo.Id
-                }
-            }
+            IdentifierHash = input.GuardianToAdd!.IdentifierHash,
+            Salt = GetSaltFromVerificationDoc(input.GuardianToAdd.VerificationInfo.VerificationDoc),
+            Type = input.GuardianToAdd.Type,
+            VerifierId = input.GuardianToAdd.VerificationInfo.Id,
+            IsLoginGuardian = false
         };
-        State.HolderInfoMap[input.CaHash].GuardiansInfo?.GuardianAccounts.Add(guardianAdded);
-
-        //ReIndexLoginGuardianAccount(loginGuardianAccounts, holderInfo.GuardiansInfo);
+        State.HolderInfoMap[input.CaHash].GuardianList?.Guardians.Add(guardianAdded);
 
 
         Context.Fire(new GuardianAdded
@@ -86,42 +80,42 @@ public partial class CAContract
         Assert(input.CaHash != null && input.GuardianToRemove != null && input.GuardiansApproved.Count != 0,
             "Invalid input.");
         Assert(State.HolderInfoMap[input.CaHash] != null, "CA holder does not exist.");
-        Assert(State.HolderInfoMap[input.CaHash].GuardiansInfo != null, "No guardians under the holder.");
-        CheckManagerPermission(input.CaHash, Context.Sender);
+        Assert(State.HolderInfoMap[input.CaHash].GuardianList != null, "No guardians under the holder.");
+        CheckManagerInfoPermission(input.CaHash, Context.Sender);
         var holderInfo = State.HolderInfoMap[input.CaHash];
         //Select satisfied guardian to remove.
-        //Filter: guardianAccount.type && guardianAccount.guardianType && Verifier.name
-        var toRemoveGuardian = holderInfo.GuardiansInfo.GuardianAccounts
-            .FirstOrDefault(g =>
-                g.Guardian.Type == input.GuardianToRemove.Type &&
-                g.Value == input.GuardianToRemove.Value &&
-                g.Guardian.Verifier.Id == input.GuardianToRemove.VerificationInfo.Id);
+        //Filter: guardian.type && guardian.&& && VerifierId
+        var toRemoveGuardian = holderInfo.GuardianList.Guardians.FirstOrDefault(g =>
+                g.Type == input.GuardianToRemove.Type &&
+                g.IdentifierHash == input.GuardianToRemove.IdentifierHash &&
+                g.VerifierId == input.GuardianToRemove.VerificationInfo.Id);
 
         if (toRemoveGuardian == null)
         {
             return new Empty();
         }
 
-        //   Get all loginGuardianAccount.
-        var loginGuardianAccount = GetLoginGuardianAccounts(holderInfo.GuardiansInfo);
-        //   If the guardianAccount to be removed is a loginGuardianAccount, ...
-        if (loginGuardianAccount.Contains(toRemoveGuardian))
+        //   Get all loginGuardian.
+        var loginGuardians = GetLoginGuardians(holderInfo.GuardianList);
+        //   If the guardian to be removed is a loginGuardian, ...
+        if (loginGuardians.Contains(toRemoveGuardian))
         {
-            var loginGuardianAccountCount = loginGuardianAccount.Count(g => g.Value == toRemoveGuardian.Value);
+            var loginGuardianCount = loginGuardians.Count(g => g.IdentifierHash == toRemoveGuardian.IdentifierHash);
             //   and it is the only one, refuse. If you really wanna to remove it, unset it first.
-            Assert(loginGuardianAccountCount > 1,
-                $"Cannot remove a Guardian for login, to remove it, unset it first. {input.GuardianToRemove?.Value} is a guardian account for login.");
+            Assert(loginGuardianCount > 1,
+                $"Cannot remove a Guardian for login, to remove it, unset it first. {input.GuardianToRemove?.IdentifierHash} is a guardian for login.");
         }
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
+        var guardianApprovedList = input.GuardiansApproved
+            .DistinctBy(g => $"{g.Type}{g.IdentifierHash}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
             Assert(
-                !(guardian.Type == toRemoveGuardian.Guardian.Type &&
-                  guardian.Value == toRemoveGuardian.Value &&
-                  guardian.VerificationInfo.Id == toRemoveGuardian.Guardian.Verifier.Id),
+                !(guardian.Type == toRemoveGuardian.Type &&
+                  guardian.IdentifierHash == toRemoveGuardian.IdentifierHash &&
+                  guardian.VerificationInfo.Id == toRemoveGuardian.VerifierId),
                 "Guardian approved list contains to removed guardian.");
             //Whether the guardian exists in the holder info.
             if (!IsGuardianExist(input.CaHash, guardian)) continue;
@@ -134,12 +128,15 @@ public partial class CAContract
         }
 
         //Whether the approved guardians count is satisfied.
-        IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count.Sub(1), guardianApprovedAmount,
+        IsJudgementStrategySatisfied(holderInfo.GuardianList.Guardians.Count.Sub(1), guardianApprovedAmount,
             holderInfo.JudgementStrategy);
 
-        State.HolderInfoMap[input.CaHash].GuardiansInfo?.GuardianAccounts.Remove(toRemoveGuardian);
+        State.HolderInfoMap[input.CaHash].GuardianList?.Guardians.Remove(toRemoveGuardian);
 
-        ReIndexLoginGuardianAccount(loginGuardianAccount, holderInfo.GuardiansInfo);
+        if (State.LoginGuardianMap[input.CaHash][toRemoveGuardian.VerifierId] != null)
+        {
+            State.LoginGuardianMap[input.CaHash].Remove(toRemoveGuardian.VerifierId);
+        }
 
         Context.Fire(new GuardianRemoved
         {
@@ -151,26 +148,12 @@ public partial class CAContract
         return new Empty();
     }
 
-    private RepeatedField<GuardianAccount> GetLoginGuardianAccounts(GuardiansInfo guardiansInfo)
+    private RepeatedField<Guardian> GetLoginGuardians(GuardianList guardianList)
     {
-        var loginGuardianAccounts = new RepeatedField<GuardianAccount>();
-        foreach (var index in guardiansInfo.LoginGuardianAccountIndexes)
-        {
-            loginGuardianAccounts.Add(guardiansInfo.GuardianAccounts[index]);
-        }
+        var loginGuardians = new RepeatedField<Guardian>();
+        loginGuardians.AddRange(guardianList.Guardians.Where(g => g.IsLoginGuardian));
 
-        return loginGuardianAccounts;
-    }
-
-    private void ReIndexLoginGuardianAccount(RepeatedField<GuardianAccount> loginGuardianAccounts,
-        GuardiansInfo guardiansInfo)
-    {
-        guardiansInfo.LoginGuardianAccountIndexes.Clear();
-
-        foreach (var loginGuardianAccount in loginGuardianAccounts)
-        {
-            FindGuardianAccountAndSet(guardiansInfo, loginGuardianAccount);
-        }
+        return loginGuardians;
     }
 
     public override Empty UpdateGuardian(UpdateGuardianInput input)
@@ -180,22 +163,23 @@ public partial class CAContract
             "Invalid input.");
         Assert(State.HolderInfoMap[input.CaHash] != null, "CA holder does not exist.");
         Assert(input.GuardianToUpdatePre?.Type == input.GuardianToUpdateNew?.Type &&
-               input.GuardianToUpdatePre?.Value == input.GuardianToUpdateNew?.Value, "Inconsistent guardian account.");
-        Assert(State.HolderInfoMap[input.CaHash].GuardiansInfo != null, "No guardians under the holder.");
-        CheckManagerPermission(input.CaHash, Context.Sender);
+               input.GuardianToUpdatePre?.IdentifierHash == input.GuardianToUpdateNew?.IdentifierHash,
+            "Inconsistent guardian.");
+        Assert(State.HolderInfoMap[input.CaHash].GuardianList != null, "No guardians under the holder.");
+        CheckManagerInfoPermission(input.CaHash, Context.Sender);
         var holderInfo = State.HolderInfoMap[input.CaHash];
 
-        //Whether the guardian account to be updated in the holder info.
-        //Filter: guardianAccount.type && guardianAccount.guardianType && Verifier.name
-        var existPreGuardian = holderInfo.GuardiansInfo.GuardianAccounts.FirstOrDefault(g =>
-            g.Guardian.Type == input.GuardianToUpdatePre.Type &&
-            g.Value == input.GuardianToUpdatePre.Value &&
-            g.Guardian.Verifier.Id == input.GuardianToUpdatePre.VerificationInfo.Id);
+        //Whether the guardian to be updated in the holder info.
+        //Filter: guardian.type && guardian.IdentifierHash && VerifierId
+        var existPreGuardian = holderInfo.GuardianList.Guardians.FirstOrDefault(g =>
+            g.Type == input.GuardianToUpdatePre.Type &&
+            g.IdentifierHash == input.GuardianToUpdatePre.IdentifierHash &&
+            g.VerifierId == input.GuardianToUpdatePre.VerificationInfo.Id);
 
-        var toUpdateGuardian = holderInfo.GuardiansInfo.GuardianAccounts.FirstOrDefault(g =>
-            g.Guardian.Type == input.GuardianToUpdateNew.Type &&
-            g.Value == input.GuardianToUpdateNew.Value &&
-            g.Guardian.Verifier.Id == input.GuardianToUpdateNew.VerificationInfo.Id);
+        var toUpdateGuardian = holderInfo.GuardianList.Guardians.FirstOrDefault(g =>
+            g.Type == input.GuardianToUpdateNew.Type &&
+            g.IdentifierHash == input.GuardianToUpdateNew.IdentifierHash &&
+            g.VerifierId == input.GuardianToUpdateNew.VerificationInfo.Id);
 
         if (existPreGuardian == null || toUpdateGuardian != null)
         {
@@ -209,14 +193,15 @@ public partial class CAContract
             v.Id == input.GuardianToUpdateNew.VerificationInfo.Id) != null, "Verifier is not exist.");
 
         var guardianApprovedAmount = 0;
-        var guardianApprovedList = input.GuardiansApproved.DistinctBy(g => $"{g.Type}{g.Value}{g.VerificationInfo.Id}")
+        var guardianApprovedList = input.GuardiansApproved
+            .DistinctBy(g => $"{g.Type}{g.IdentifierHash}{g.VerificationInfo.Id}")
             .ToList();
         foreach (var guardian in guardianApprovedList)
         {
             Assert(
-                !(guardian.Type == existPreGuardian.Guardian.Type &&
-                  guardian.Value == existPreGuardian.Value &&
-                  guardian.VerificationInfo.Id == existPreGuardian.Guardian.Verifier.Id),
+                !(guardian.Type == existPreGuardian.Type &&
+                  guardian.IdentifierHash == existPreGuardian.IdentifierHash &&
+                  guardian.VerificationInfo.Id == existPreGuardian.VerifierId),
                 "Guardian approved list contains to updated guardian.");
             //Whether the guardian exists in the holder info.
             if (!IsGuardianExist(input.CaHash, guardian)) continue;
@@ -229,10 +214,16 @@ public partial class CAContract
         }
 
         //Whether the approved guardians count is satisfied.
-        IsJudgementStrategySatisfied(holderInfo.GuardiansInfo.GuardianAccounts.Count.Sub(1), guardianApprovedAmount,
+        IsJudgementStrategySatisfied(holderInfo.GuardianList.Guardians.Count.Sub(1), guardianApprovedAmount,
             holderInfo.JudgementStrategy);
 
-        existPreGuardian.Guardian.Verifier.Id = input.GuardianToUpdateNew?.VerificationInfo.Id;
+        existPreGuardian.VerifierId = input.GuardianToUpdateNew?.VerificationInfo.Id;
+
+        if (State.LoginGuardianMap[preGuardian.IdentifierHash][preGuardian.VerifierId] != null)
+        {
+            State.LoginGuardianMap[preGuardian.IdentifierHash].Remove(preGuardian.VerifierId);
+            State.LoginGuardianMap[existPreGuardian.IdentifierHash][existPreGuardian.VerifierId] = input.CaHash;
+        }
 
         Context.Fire(new GuardianUpdated
         {
