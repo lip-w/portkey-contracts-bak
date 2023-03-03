@@ -117,10 +117,8 @@ message Guardian {
 enum GuardianType {
   GUARDIAN_TYPE_OF_EMAIL = 0;
   GUARDIAN_TYPE_OF_PHONE = 1;
-}
-
-message Verifier {
-  aelf.Hash id = 1;
+  GUARDIAN_TYPE_OF_GOOGLE_ACCOUNT = 2;
+  GUARDIAN_TYPE_OF_APPLE_ID = 3;
 }
 
 message VerifierServer {
