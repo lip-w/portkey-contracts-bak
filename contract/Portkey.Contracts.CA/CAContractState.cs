@@ -13,16 +13,16 @@ public partial class CAContractState : ContractState
     // public SingletonState<Address> SetConfigController { get; set; }
 
     /// <summary>
-    /// Login Guardian Account -> Verifier Id -> HolderInfo Hash
-    /// multiple Login Guardian Account to one HolderInfo Hash
+    /// Login Guardian identifier hash  -> Verifier Id -> HolderInfo Hash
+    /// multiple Login Guardian to one HolderInfo Hash
     /// </summary>
-    public MappedState<string, Hash, Hash> LoginGuardianAccountMap { get; set; }
+    public MappedState<Hash, Hash, Hash> LoginGuardianMap { get; set; }
 
     /// <summary>
-    /// Login Guardian Account -> HolderInfo Hash
-    /// multiple Login Guardian Account to one HolderInfo Hash
+    /// Login Guardian identifier hash -> HolderInfo Hash
+    /// multiple Login Guardian to one HolderInfo Hash
     /// </summary>
-    public MappedState<string, Hash> GuardianAccountMap { get; set; }
+    public MappedState<Hash, Hash> GuardianMap { get; set; }
 
     /// <summary>
     /// HolderInfo Hash -> HolderInfo
