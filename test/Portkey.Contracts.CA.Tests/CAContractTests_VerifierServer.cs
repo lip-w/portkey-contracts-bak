@@ -25,6 +25,16 @@ public partial class CAContractTests : CAContractTestBase
         var result = CaContractStub.GetVerifierServers.CallAsync(new Empty());
         result.Result.VerifierServers[0].EndPoints.ShouldContain("127.0.0.1");
         result.Result.VerifierServers[0].EndPoints.Count.ShouldBe(1);
+
+        await CaContractStub.AddVerifierServerEndPoints.SendAsync(new AddVerifierServerEndPointsInput
+        {
+            Name = "test",
+            ImageUrl = "url",
+            VerifierAddressList = { new Address() },
+            EndPoints = { "127.0.0.1" }
+        });
+        result = CaContractStub.GetVerifierServers.CallAsync(new Empty());
+        result.Result.VerifierServers[0].EndPoints.Count.ShouldBe(1);
     }
 
     [Fact]
@@ -249,19 +259,20 @@ public partial class CAContractTests : CAContractTestBase
     [Fact]
     public async Task RemoveVerifierServerTest_Failed_InvalidInput()
     {
-        await CaContractStub.Initialize.SendAsync(new InitializeInput
-        {
-            ContractAdmin = DefaultAddress
-        });
-        /*await CaContractStub.RemoveVerifierServerEndPoints.SendAsync(new RemoveVerifierServerEndPointsInput
-        {
-            Name = "test",
-            EndPoints = { "127.0.0.1" }
-        });*/
-
+        await AddVerifierServerEndPointsTest();
+        
         var inputWithNameNull = new RemoveVerifierServerInput();
         var result = await CaContractStub.RemoveVerifierServer.SendWithExceptionAsync(inputWithNameNull);
         result.TransactionResult.Error.ShouldContain("invalid input id");
+        
+        result = await CaContractStub.AddVerifierServerEndPoints.SendWithExceptionAsync(new AddVerifierServerEndPointsInput
+        {
+            Name = "test",
+            ImageUrl = "url",
+            VerifierAddressList = { new Address() },
+            EndPoints = { }
+        });
+        result.TransactionResult.Error.ShouldContain("invalid input endPoints");
     }
 
     [Fact]

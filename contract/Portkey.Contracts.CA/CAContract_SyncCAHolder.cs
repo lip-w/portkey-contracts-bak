@@ -13,7 +13,7 @@ public partial class CAContract
         ValidateCAHolderInfoWithManagerInfosExistsInput input)
     {
         Assert(input != null, "input is null");
-        Assert(input!.CaHash != null, "input.CaHash is null");
+        Assert(CheckHashInput(input!.CaHash), "input.CaHash is null or empty");
         Assert(input.ManagerInfos != null, "input.ManagerInfos is null");
 
         var holderInfo = State.HolderInfoMap[input.CaHash];
@@ -22,19 +22,7 @@ public partial class CAContract
         ValidateLoginGuardian(input.CaHash, holderInfo, input.LoginGuardians,
             input.NotLoginGuardians);
 
-        var managerInfos = input.ManagerInfos!.Distinct().ToList();
-
-        Assert(holderInfo!.ManagerInfos.Count == managerInfos.Count,
-            "ManagerInfos set is out of time! Please GetHolderInfo again.");
-
-        foreach (var managerInfo in managerInfos)
-        {
-            if (!CAHolderContainsManagerInfo(holderInfo.ManagerInfos, managerInfo))
-            {
-                Assert(false,
-                    $"ManagerInfo(address:{managerInfo.Address},extra_data{managerInfo.ExtraData}) is not in this CAHolder.");
-            }
-        }
+        ValidateManager(holderInfo, input.ManagerInfos);
 
         return new Empty();
     }
@@ -57,6 +45,23 @@ public partial class CAContract
             Assert(loginGuardians.Contains(loginGuardian)
                    && State.GuardianMap[loginGuardian] == caHash,
                 $"LoginGuardian:{loginGuardian} is not in HolderInfo's LoginGuardians");
+        }
+    }
+
+    private void ValidateManager(HolderInfo holderInfo, RepeatedField<ManagerInfo> managerInfoInput)
+    {
+        var managerInfos = managerInfoInput.Distinct().ToList();
+
+        Assert(holderInfo!.ManagerInfos.Count == managerInfos.Count,
+            "ManagerInfos set is out of time! Please GetHolderInfo again.");
+
+        foreach (var managerInfo in managerInfos)
+        {
+            if (!CAHolderContainsManagerInfo(holderInfo.ManagerInfos, managerInfo))
+            {
+                Assert(false,
+                    $"ManagerInfo(address:{managerInfo.Address},extra_data{managerInfo.ExtraData}) is not in this CAHolder.");
+            }
         }
     }
 
