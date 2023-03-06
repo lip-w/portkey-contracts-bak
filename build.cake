@@ -1,5 +1,5 @@
-#tool dotnet:?package=Codecov.Tool&version=1.13.0
-#addin nuget:?package=Cake.Codecov&version=1.0.1
+#tool nuget:?package=Codecov
+#addin nuget:?package=Cake.Codecov&version=0.8.0
 
 var target = Argument("target", "Default");
 var configuration = Argument("configuration", "Debug");
@@ -72,10 +72,30 @@ Task("Test-with-Codecov")
     }
 });
 
+Task("Run-Unit-Tests")
+    .Description("operation test")
+    .IsDependentOn("Build")
+    .Does(() =>
+{
+    var testSetting = new DotNetCoreTestSettings{
+        Configuration = configuration,
+        NoRestore = true,
+        NoBuild = true,
+        ArgumentCustomization = args => {
+            return args.Append("--logger trx");
+        }
+};
+    var testProjects = GetFiles("./test/*.Tests/*.csproj");
+    foreach(var testProject in testProjects)
+    {
+        DotNetCoreTest(testProject.FullPath, testSetting);
+    }
+});
+
 Task("Upload-Coverage-Azure")
     .Does(() =>
 {
-    Codecov("./CodeCoverage/Cobertura.xml",EnvironmentVariable("CODECOV_TOKEN"));
+    Codecov("./CodeCoverage/Cobertura.xml","$CODECOV_TOKEN");
 });
 
 RunTarget(target);
