@@ -35,7 +35,7 @@ public partial class CAContract
         loginGuardians.AddRange(holderInfo.GuardianList.Guardians.Where(g => g.IsLoginGuardian)
             .Select(g => g.IdentifierHash));
 
-        var loginGuardianIdentifierHashList = loginGuardianInput.Distinct().ToList();
+        var loginGuardianIdentifierHashList = loginGuardianInput.ToList();
 
         Assert(loginGuardians.Count == loginGuardianIdentifierHashList.Count,
             "The amount of LoginGuardianInput not equals to HolderInfo's LoginGuardians");
