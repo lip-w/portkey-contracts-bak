@@ -35,6 +35,7 @@ public partial class CAContract
         loginGuardians.AddRange(holderInfo.GuardianList.Guardians.Where(g => g.IsLoginGuardian)
             .Select(g => g.IdentifierHash));
 
+        // LoginGuardianInput may have duplicate IdentifierHash, so must not use Distinct()
         var loginGuardianIdentifierHashList = loginGuardianInput.ToList();
 
         Assert(loginGuardians.Count == loginGuardianIdentifierHashList.Count,
