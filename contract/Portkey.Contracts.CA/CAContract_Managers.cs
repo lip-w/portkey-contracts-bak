@@ -53,6 +53,8 @@ public partial class CAContract
         // ManagerInfo exists
         var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, input.ManagerInfo.Address);
         Assert(managerInfo == null, $"ManagerInfo exists");
+        Assert(holderInfo.ManagerInfos.Count < CAContractConstants.ManagerMaxCount,
+            "The amount of ManagerInfos out of limit");
 
         State.HolderInfoMap[caHash].ManagerInfos.Add(input.ManagerInfo);
         SetDelegator(caHash, input.ManagerInfo);
@@ -83,6 +85,8 @@ public partial class CAContract
         // ManagerInfo exists
         var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, input.ManagerInfo.Address);
         Assert(managerInfo == null, $"ManagerInfo address exists");
+        Assert(holderInfo.ManagerInfos.Count < CAContractConstants.ManagerMaxCount,
+            "The amount of ManagerInfos out of limit");
 
         holderInfo.ManagerInfos.Add(input.ManagerInfo);
         SetDelegator(input.CaHash, input.ManagerInfo);
@@ -100,32 +104,118 @@ public partial class CAContract
         return new Empty();
     }
 
+    // For manager remove itself
     public override Empty RemoveManagerInfo(RemoveManagerInfoInput input)
     {
         Assert(input != null, "invalid input");
-        CheckManagerInfoInput(input!.CaHash, input.ManagerInfo);
-        //Assert(Context.Sender.Equals(input.Manager.Address), "No permission to remove");
+        Assert(CheckHashInput(input!.CaHash), "invalid input caHash");
+        CheckManagerInfoPermission(input!.CaHash, Context.Sender);
 
+        return RemoveManager(input.CaHash, Context.Sender);
+    }
+
+    // For manager remove other
+    public override Empty RemoveOtherManagerInfo(RemoveOtherManagerInfoInput input)
+    {
+        Assert(input != null, "invalid input");
+        CheckManagerInfoInput(input!.CaHash, input.ManagerInfo);
+        Assert(!Context.Sender.Equals(input.ManagerInfo.Address), "One should not remove itself");
+        Assert(input.GuardiansApproved != null && input.GuardiansApproved.Count > 0, "invalid input guardiansApproved");
+        
         var holderInfo = State.HolderInfoMap[input.CaHash];
         Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
         Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {input.CaHash}");
 
+        var guardianApprovedAmount = 0;
+        var guardianApprovedList = input.GuardiansApproved!
+            .DistinctBy(g => $"{g.Type}{g.IdentifierHash}{g.VerificationInfo.Id}")
+            .ToList();
+        foreach (var guardian in guardianApprovedList)
+        {
+            //Whether the guardian exists in the holder info.
+            if (!IsGuardianExist(input.CaHash, guardian)) continue;
+            //Check the verifier signature and data of the guardian to be approved.
+            var isApproved = CheckVerifierSignatureAndData(guardian);
+            if (isApproved)
+            {
+                guardianApprovedAmount++;
+            }
+        }
+
+        //Whether the approved guardians count is satisfied.
+        IsJudgementStrategySatisfied(holderInfo.GuardianList!.Guardians.Count, guardianApprovedAmount,
+            holderInfo.JudgementStrategy);
+        
+        return RemoveManager(input.CaHash, input.ManagerInfo.Address);
+    }
+
+    private Empty RemoveManager(Hash caHash, Address address)
+    {
+        var holderInfo = State.HolderInfoMap[caHash];
+        Assert(holderInfo != null, $"Not found holderInfo by caHash: {caHash}");
+        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {caHash}");
+
         // Manager does not exist
-        var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, input.ManagerInfo.Address);
+        var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, address);
         if (managerInfo == null)
         {
             return new Empty();
         }
 
         holderInfo.ManagerInfos.Remove(managerInfo);
-        RemoveDelegator(input.CaHash, managerInfo);
+        RemoveDelegator(caHash, managerInfo);
 
         Context.Fire(new ManagerInfoRemoved
         {
-            CaHash = input.CaHash,
-            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
+            CaHash = caHash,
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(caHash),
             Manager = managerInfo.Address,
             ExtraData = managerInfo.ExtraData
+        });
+
+        return new Empty();
+    }
+
+    public override Empty UpdateManagerInfos(UpdateManagerInfosInput input)
+    {
+        Assert(input != null, "invalid input");
+        CheckManagerInfosInput(input!.CaHash, input.ManagerInfos);
+        
+        var holderInfo = State.HolderInfoMap[input.CaHash];
+        Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {input.CaHash}");
+
+        var managerInfosToUpdate = input.ManagerInfos.Distinct().ToList();
+
+        var managerInfoList = holderInfo.ManagerInfos;
+
+        var managerInfosUpdated = new RepeatedField<ManagerInfo>();
+
+        foreach (var manager in managerInfosToUpdate)
+        {
+            var managerToUpdate = managerInfoList.FirstOrDefault(m => m.Address == manager.Address);
+            if (managerToUpdate == null || managerToUpdate.ExtraData == manager.ExtraData)
+            {
+                continue;
+            }
+
+            managerToUpdate.ExtraData = manager.ExtraData;
+            managerInfosUpdated.Add(managerToUpdate);
+        }
+
+        if (managerInfosUpdated.Count == 0)
+        {
+            return new Empty();
+        }
+
+        Context.Fire(new ManagerInfosUpdated
+        {
+            CaHash = input.CaHash,
+            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
+            ManagerInfoList = new ManagerInfoList
+            {
+                ManagerInfos = { managerInfosUpdated }
+            }
         });
 
         return new Empty();
@@ -136,7 +226,21 @@ public partial class CAContract
         Assert(hash != null, "invalid input CaHash");
         CheckManagerInfoPermission(hash, Context.Sender);
         Assert(managerInfo != null, "invalid input managerInfo");
-        Assert(!string.IsNullOrEmpty(managerInfo!.ExtraData) && managerInfo.Address != null, "invalid input managerInfo");
+        Assert(!string.IsNullOrEmpty(managerInfo!.ExtraData) && managerInfo.Address != null,
+            "invalid input managerInfo");
+    }
+    
+    private void CheckManagerInfosInput(Hash hash, RepeatedField<ManagerInfo> managerInfos)
+    {
+        Assert(hash != null, "invalid input CaHash");
+        CheckManagerInfoPermission(hash, Context.Sender);
+        Assert(managerInfos != null && managerInfos.Count > 0, "invalid input managerInfo");
+
+        foreach (var managerInfo in managerInfos!)
+        {
+            Assert(!string.IsNullOrEmpty(managerInfo!.ExtraData) && managerInfo.Address != null,
+                "invalid input managerInfo");
+        }
     }
 
     public override Empty ManagerForwardCall(ManagerForwardCallInput input)
