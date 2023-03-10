@@ -17,8 +17,7 @@ public partial class CAContract
         Assert(CheckHashInput(input.Guardian!.IdentifierHash), "Guardian IdentifierHash should not be null");
         CheckManagerInfoPermission(input.CaHash, Context.Sender);
 
-        var holderInfo = State.HolderInfoMap[input.CaHash];
-        Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
+        var holderInfo = GetHolderInfoByCaHash(input.CaHash);
 
         var loginGuardian = input.Guardian;
 
@@ -73,9 +72,7 @@ public partial class CAContract
         Assert(CheckHashInput(input.Guardian!.IdentifierHash), "Guardian IdentifierHash can not be null");
         CheckManagerInfoPermission(input.CaHash, Context.Sender);
 
-        var holderInfo = State.HolderInfoMap[input.CaHash];
-        Assert(holderInfo != null, $"Not found holderInfo by caHash: {input.CaHash}");
-        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {input.CaHash}");
+        var holderInfo = GetHolderInfoByCaHash(input.CaHash);
 
         // if CAHolder only have one LoginGuardian,not Allow Unset;
         Assert(holderInfo.GuardianList!.Guardians.Count(g => g.IsLoginGuardian) > 1,

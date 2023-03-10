@@ -729,7 +729,7 @@ public partial class CAContractTests
                 guardianApprove
             }
         });
-        executionResult.TransactionResult.Error.ShouldContain("CA holder does not exist.");
+        executionResult.TransactionResult.Error.ShouldContain($"CA holder is null.CA hash:{HashHelper.ComputeFrom("aaa")}");
     }
 
     [Fact]
@@ -1053,7 +1053,7 @@ public partial class CAContractTests
                 guardianApprove
             }
         });
-        executionResult.TransactionResult.Error.ShouldContain("CA holder does not exist.");
+        executionResult.TransactionResult.Error.ShouldContain($"CA holder is null.CA hash:{HashHelper.ComputeFrom("aaa")}");
     }
 
     [Fact]
@@ -1933,7 +1933,7 @@ public partial class CAContractTests
                 },
                 GuardiansApproved = { guardianApprove }
             });
-            executionResult.TransactionResult.Error.ShouldContain("CA holder does not exist.");
+            executionResult.TransactionResult.Error.ShouldContain($"CA holder is null.CA hash:{HashHelper.ComputeFrom("111111")}");
         }
     }
 

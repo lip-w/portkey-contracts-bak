@@ -68,4 +68,13 @@ public partial class CAContract
     {
         return verificationDoc.Split(",")[4];
     }
+
+    private HolderInfo GetHolderInfoByCaHash(Hash caHash)
+    {
+        var holderInfo = State.HolderInfoMap[caHash];
+        Assert(holderInfo != null, $"CA holder is null.CA hash:{caHash}");
+        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {caHash}");
+
+        return holderInfo;
+    }
 }

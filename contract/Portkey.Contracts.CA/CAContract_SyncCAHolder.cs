@@ -16,8 +16,7 @@ public partial class CAContract
         Assert(CheckHashInput(input!.CaHash), "input.CaHash is null or empty");
         Assert(input.ManagerInfos != null, "input.ManagerInfos is null");
 
-        var holderInfo = State.HolderInfoMap[input.CaHash];
-        Assert(holderInfo != null, $"Holder by ca_hash: {input.CaHash} is not found!");
+        var holderInfo = GetHolderInfoByCaHash(input.CaHash);
 
         ValidateLoginGuardian(input.CaHash, holderInfo, input.LoginGuardians);
 

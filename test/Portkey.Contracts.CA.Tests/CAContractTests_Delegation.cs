@@ -8,7 +8,7 @@ namespace Portkey.Contracts.CA;
 public partial class CAContractTests
 {
     [Fact]
-    public async Task SetContractDelegationFee_Succeed()
+    public async Task SetContractDelegationFeeTest()
     {
         await CreateHolder();
         var contractDelegationFee = await CaContractStub.GetContractDelegationFee.CallAsync(new Empty());
