@@ -1,8 +1,3 @@
-ignore:
-  - "contract/CAContract_StrategyBase.cs"
-  - "contract/CAContract_StrategyHelper.cs"
-  - "contract/CAContract_StrategyImpl.cs"
-  - "contract/CAContract_SyncCAHolder.cs"
 jobs:
   # All tasks on Windows....
 #  - job: build_all_windows
@@ -74,6 +69,13 @@ jobs:
 #        displayName: 'Upload data to Codecov'
   # All tasks on macOS
   - job: build_all_darwin
+    trigger:
+      paths:
+        exclude:
+          - contract/Portkey.Contracts.CA/CAContract_StrategyBase.cs
+          - contract/Portkey.Contracts.CA/CAContract_StrategyHelper.cs
+          - contract/Portkey.Contracts.CA/CAContract_StrategyImpl.cs
+          - contract/Portkey.Contracts.CA/CAContract_SyncCAHolder.cs
     displayName: Build all tasks (macOS)
     timeoutInMinutes: 120
     pool:
