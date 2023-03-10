@@ -2,7 +2,7 @@ codecov:
   notify:
     after_n_builds: 1
   ignore:
-    - "contract/Portkey.Contracts.CA/CAContract_StrategyBase.cs"
-    - "contract/Portkey.Contracts.CA/CAContract_StrategyHelper.cs"
-    - "contract/Portkey.Contracts.CA/CAContract_StrategyImpl.cs"
-    - "contract/Portkey.Contracts.CA/CAContract_SyncCAHolder.cs"
+    - "**/CAContract_StrategyBase.cs"
+    - "**/CAContract_StrategyHelper.cs"
+    - "**/CAContract_StrategyImpl.cs"
+    - "**/CAContract_SyncCAHolder.cs"
