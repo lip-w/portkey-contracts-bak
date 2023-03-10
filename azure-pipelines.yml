@@ -69,13 +69,6 @@ jobs:
 #        displayName: 'Upload data to Codecov'
   # All tasks on macOS
   - job: build_all_darwin
-    trigger:
-      paths:
-        exclude:
-          - contract/Portkey.Contracts.CA/CAContract_StrategyBase.cs
-          - contract/Portkey.Contracts.CA/CAContract_StrategyHelper.cs
-          - contract/Portkey.Contracts.CA/CAContract_StrategyImpl.cs
-          - contract/Portkey.Contracts.CA/CAContract_SyncCAHolder.cs
     displayName: Build all tasks (macOS)
     timeoutInMinutes: 120
     pool:
