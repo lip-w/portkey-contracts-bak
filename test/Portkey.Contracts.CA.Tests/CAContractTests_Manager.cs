@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Portkey.Contracts.CA;
 
-public partial class CAContractTests : CAContractTestBase
+public partial class CAContractTests
 {
     private async Task CreateHolderDefault()
     {
@@ -548,6 +548,29 @@ public partial class CAContractTests : CAContractTestBase
             {
             });
         socialRecoverySendAsync.TransactionResult.Error.ShouldContain("invalid input");
+        
+        socialRecoverySendAsync = await CaContractStub.SocialRecovery.SendWithExceptionAsync(
+            new SocialRecoveryInput
+            {
+                LoginGuardianIdentifierHash = _guardian,
+                ManagerInfo = new ManagerInfo
+                {
+                    Address = DefaultAddress
+                }
+            });
+        socialRecoverySendAsync.TransactionResult.Error.ShouldContain("invalid input extraData");
+
+        socialRecoverySendAsync = await CaContractStub.SocialRecovery.SendWithExceptionAsync(
+            new SocialRecoveryInput
+            {
+                LoginGuardianIdentifierHash = _guardian,
+                ManagerInfo = new ManagerInfo
+                {
+                    Address = DefaultAddress,
+                    ExtraData = ""
+                }
+            });
+        socialRecoverySendAsync.TransactionResult.Error.ShouldContain("invalid input extraData");
     }
 
     [Fact]
@@ -1072,6 +1095,18 @@ public partial class CAContractTests : CAContractTestBase
             }
         });
         result.TransactionResult.Error.ShouldContain("invalid input guardiansApproved");
+        
+        result = await CaContractStub.RemoveOtherManagerInfo.SendWithExceptionAsync(new RemoveOtherManagerInfoInput
+        {
+            CaHash = caInfo.CaHash,
+            ManagerInfo = new ManagerInfo
+            {
+                Address = User1Address,
+                ExtraData = "123"
+            },
+            GuardiansApproved = { new List<GuardianInfo>() }
+        });
+        result.TransactionResult.Error.ShouldContain("invalid input guardiansApproved");
 
         result = await CaContractStub.RemoveOtherManagerInfo.SendWithExceptionAsync(new RemoveOtherManagerInfoInput
         {
@@ -1091,15 +1126,56 @@ public partial class CAContractTests : CAContractTestBase
                 }
             }
         });
-        result.TransactionResult.Error.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder：guardianCount:1, guardianApprovedCount:0");
+    }
+    
+    [Fact]
+    public async Task RemoveOtherManagerInfoTest_ManagerNotExist()
+    {
+        await CreateHolder();
+        var verificationTime = DateTime.UtcNow;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
+        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
+        {
+            LoginGuardianIdentifierHash = _guardian
+        });
+        caInfo.ManagerInfos.Count.ShouldBe(2);
+        await CaContractStub.RemoveOtherManagerInfo.SendAsync(new RemoveOtherManagerInfoInput
+        {
+            CaHash = caInfo.CaHash,
+            ManagerInfo = new ManagerInfo
+            {
+                Address = User3Address,
+                ExtraData = "123"
+            },
+            GuardiansApproved =
+            {
+                new GuardianInfo
+                {
+                    Type = GuardianType.OfEmail,
+                    IdentifierHash = _guardian,
+                    VerificationInfo = new VerificationInfo
+                    {
+                        Id = _verifierId,
+                        Signature = signature,
+                        VerificationDoc =
+                            $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
+                    }
+                }
+            }
+        });
+        
+        caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
+        {
+            LoginGuardianIdentifierHash = _guardian
+        });
+        caInfo.ManagerInfos.Count.ShouldBe(2);
     }
 
     [Fact]
     public async Task RemoveOtherManagerInfoTest_Fail_SelfRemove()
     {
         await CreateHolder();
-        var verificationTime = DateTime.UtcNow;
-        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
         var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
         {
             LoginGuardianIdentifierHash = _guardian
@@ -1114,6 +1190,350 @@ public partial class CAContractTests : CAContractTestBase
             }
         });
         result.TransactionResult.Error.ShouldContain("One should not remove itself");
+    }
+    
+    [Fact]
+    public async Task RemoveOtherManagerInfoTest_Fail_NoPermission()
+    {
+        await CreateCAHolderNoPermission();
+        var caInfo = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput()
+        {
+            LoginGuardianIdentifierHash = _guardian
+        });
+        var result = await CaContractStub.RemoveOtherManagerInfo.SendWithExceptionAsync(new RemoveOtherManagerInfoInput
+        {
+            CaHash = caInfo.CaHash,
+            ManagerInfo = new ManagerInfo
+            {
+                Address = User1Address,
+                ExtraData = "123"
+            }
+        });
+        result.TransactionResult.Error.ShouldContain("No permission.");
+    }
+
+    [Fact]
+    public async Task RemoveOtherManagerInfoTest_GuardianApproved()
+    {
+        var caHash = await AddGuardian();
+        var output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.GuardianList.Guardians.Count.ShouldBe(4);
+        output.ManagerInfos.Count.ShouldBe(2);
+        
+        var verificationTime = DateTime.UtcNow;
+        var signature = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian, 0);
+        var signature1 =
+            GenerateSignature(VerifierKeyPair1, VerifierAddress1, verificationTime, _guardian1, 0);
+        var signature2 = GenerateSignature(VerifierKeyPair, VerifierAddress, verificationTime, _guardian2, 0);
+        
+        var guardianApprove = new List<GuardianInfo>
+        {
+            new ()
+            {
+                Type = GuardianType.OfEmail,
+                IdentifierHash = _guardian,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId,
+                    Signature = signature,
+                    VerificationDoc = $"{0},{_guardian.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
+                }
+            }
+        };
+
+        var result = await CaContractUser1Stub.RemoveOtherManagerInfo.SendWithExceptionAsync(
+            new RemoveOtherManagerInfoInput
+            {
+                CaHash = caHash,
+                ManagerInfo = new ManagerInfo
+                {
+                    Address = DefaultAddress,
+                    ExtraData = "123"
+                },
+                GuardiansApproved = { guardianApprove }
+            });
+        result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder：guardianCount:4, guardianApprovedCount:1");
+        
+        guardianApprove.AddRange(new []
+        {
+            new GuardianInfo
+            {
+                Type = GuardianType.OfEmail,
+                IdentifierHash = _guardian1,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId1,
+                    Signature = signature1,
+                    VerificationDoc = ""
+                }
+            },
+            new GuardianInfo
+            {
+                Type = GuardianType.OfEmail,
+                IdentifierHash = _guardian2,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId,
+                    Signature = signature2,
+                    VerificationDoc = ""
+                }
+            }
+        });
+        
+        result = await CaContractUser1Stub.RemoveOtherManagerInfo.SendWithExceptionAsync(
+            new RemoveOtherManagerInfoInput
+            {
+                CaHash = caHash,
+                ManagerInfo = new ManagerInfo
+                {
+                    Address = DefaultAddress,
+                    ExtraData = "123"
+                },
+                GuardiansApproved = { guardianApprove }
+            });
+        result.TransactionResult.Error.ShouldContain("Not Satisfied criterion to create a CA Holder：guardianCount:4, guardianApprovedCount:1");
+
+        guardianApprove.RemoveAt(2);
+        guardianApprove.RemoveAt(1);
+        guardianApprove.AddRange(new []
+        {
+            new GuardianInfo
+            {
+                Type = GuardianType.OfEmail,
+                IdentifierHash = _guardian1,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId1,
+                    Signature = signature1,
+                    VerificationDoc = $"{0},{_guardian1.ToHex()},{verificationTime},{VerifierAddress1.ToBase58()},{Salt}"
+                }
+            },
+            new GuardianInfo
+            {
+                Type = GuardianType.OfEmail,
+                IdentifierHash = _guardian2,
+                VerificationInfo = new VerificationInfo
+                {
+                    Id = _verifierId,
+                    Signature = signature2,
+                    VerificationDoc = $"{0},{_guardian2.ToHex()},{verificationTime},{VerifierAddress.ToBase58()},{Salt}"
+                }
+            }
+        });
+
+        await CaContractUser1Stub.RemoveOtherManagerInfo.SendAsync(new RemoveOtherManagerInfoInput
+        {
+            CaHash = caHash,
+            ManagerInfo = new ManagerInfo
+            {
+                Address = DefaultAddress,
+                ExtraData = "123"
+            },
+            GuardiansApproved = { guardianApprove }
+        });
+
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task UpdateManagerInfo()
+    {
+        var caHash = await CreateHolder();
+        var output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("123");
+
+        await CaContractStub.UpdateManagerInfos.SendAsync(new UpdateManagerInfosInput
+        {
+            CaHash = caHash,
+            ManagerInfos =
+            {
+                new ManagerInfo
+                {
+                    Address = User1Address,
+                    ExtraData = "456"
+                }
+            }
+        });
+        
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("456");
+    }
+    
+    [Fact]
+    public async Task UpdateManagerInfo_Fail_InvalidInput()
+    {
+        var caHash = await CreateHolder();
+
+        var result = await CaContractStub.UpdateManagerInfos.SendWithExceptionAsync(new UpdateManagerInfosInput());
+        result.TransactionResult.Error.ShouldContain("invalid input CaHash");
+        
+        result = await CaContractStub.UpdateManagerInfos.SendWithExceptionAsync(new UpdateManagerInfosInput
+        {
+            CaHash = Hash.Empty
+        });
+        result.TransactionResult.Error.ShouldContain($"CA holder is null.CA hash:{Hash.Empty}");
+        
+        result = await CaContractStub.UpdateManagerInfos.SendWithExceptionAsync(new UpdateManagerInfosInput
+        {
+            CaHash = caHash
+        });
+        result.TransactionResult.Error.ShouldContain("invalid input managerInfo");
+        
+        result = await CaContractStub.UpdateManagerInfos.SendWithExceptionAsync(new UpdateManagerInfosInput
+        {
+            CaHash = caHash,
+            ManagerInfos = {}
+        });
+        result.TransactionResult.Error.ShouldContain("invalid input managerInfo");
+    }
+
+    [Fact]
+    public async Task UpdateManagerInfo_ManagerInfoNotExists()
+    {
+        var caHash = await CreateHolder();
+        var output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("123");
+
+        await CaContractStub.UpdateManagerInfos.SendAsync(new UpdateManagerInfosInput
+        {
+            CaHash = caHash,
+            ManagerInfos =
+            {
+                new ManagerInfo
+                {
+                    Address = User2Address,
+                    ExtraData = "456"
+                }
+            }
+        });
+        
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("123");
+    }
+
+    [Fact]
+    public async Task UpdateManagerInfo_SameManagerInfo()
+    {
+        var caHash = await CreateHolder();
+        var output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("123");
+
+        await CaContractStub.UpdateManagerInfos.SendAsync(new UpdateManagerInfosInput
+        {
+            CaHash = caHash,
+            ManagerInfos =
+            {
+                new ManagerInfo
+                {
+                    Address = User1Address,
+                    ExtraData = "123"
+                }
+            }
+        });
+        
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("123");
+    }
+    
+    [Fact]
+    public async Task UpdateManagerInfo_MixedManagerInfo()
+    {
+        var caHash = await CreateHolder();
+        var output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("123");
+
+        var transactionResult = await CaContractStub.UpdateManagerInfos.SendAsync(new UpdateManagerInfosInput
+        {
+            CaHash = caHash,
+            ManagerInfos =
+            {
+                new ManagerInfo
+                {
+                    Address = User1Address,
+                    ExtraData = "123"
+                },
+                new ManagerInfo
+                {
+                    Address = User2Address,
+                    ExtraData = "456"
+                },
+                new ManagerInfo
+                {
+                    Address = User1Address,
+                    ExtraData = "789"
+                }
+            }
+        });
+        
+        output = await CaContractStub.GetHolderInfo.CallAsync(new GetHolderInfoInput
+        {
+            CaHash = caHash,
+            LoginGuardianIdentifierHash = Hash.Empty
+        });
+        
+        output.ManagerInfos.Count.ShouldBe(2);
+        output.ManagerInfos[0].Address.ShouldBe(User1Address);
+        output.ManagerInfos[0].ExtraData.ShouldBe("789");
     }
 
     private async Task CreateHolderNoPermission()

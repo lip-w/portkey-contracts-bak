@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Portkey.Contracts.CA;
 
-public partial class CAContractTests : CAContractTestBase
+public partial class CAContractTests
 {
     [Fact]
     public async Task AddVerifierServerEndPointsTest()
