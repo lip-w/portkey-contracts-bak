@@ -1,3 +1,8 @@
+ignore:
+  - "contract/CAContract_StrategyBase.cs"
+  - "contract/CAContract_StrategyHelper.cs"
+  - "contract/CAContract_StrategyImpl.cs"
+  - "contract/CAContract_SyncCAHolder.cs"
 jobs:
   # All tasks on Windows....
 #  - job: build_all_windows
@@ -75,11 +80,6 @@ jobs:
       vmImage: macos-latest
     variables:
       CI_TEST: true
-    ignore:
-      - "contract/CAContract_StrategyBase.cs"
-      - "contract/CAContract_StrategyHelper.cs"
-      - "contract/CAContract_StrategyImpl.cs"
-      - "contract/CAContract_SyncCAHolder.cs"
     steps:
       - task: UseDotNet@2
         displayName: 'Install .NET Core SDK'
