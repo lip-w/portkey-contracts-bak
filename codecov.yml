@@ -1,8 +1,8 @@
 codecov:
   notify:
     after_n_builds: 1
-  ignore:
-    - "**/CAContract_StrategyBase.cs"
-    - "**/CAContract_StrategyHelper.cs"
-    - "**/CAContract_StrategyImpl.cs"
-    - "**/CAContract_SyncCAHolder.cs"
+ignore:
+  - "**/CAContract_StrategyBase.cs"
+  - "**/CAContract_StrategyHelper.cs"
+  - "**/CAContract_StrategyImpl.cs"
+  - "**/CAContract_SyncCAHolder.cs"
