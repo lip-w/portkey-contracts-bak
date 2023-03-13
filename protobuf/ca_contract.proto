@@ -466,12 +466,13 @@ message ManagerInfoRemoved {
   string extra_data = 4;
 }
 
-// ManagerInfos updated
-message ManagerInfosUpdated {
+// ManagerInfo updated
+message ManagerInfoUpdated {
   option (aelf.is_event) = true;
   aelf.Hash ca_hash = 1 [(aelf.is_indexed) = true];
   aelf.Address ca_address = 2 [(aelf.is_indexed) = true];
-  ManagerInfoList manager_info_list = 3 [(aelf.is_indexed) = true];
+  aelf.Address manager = 3 [(aelf.is_indexed) = true];
+  string extra_data = 4;
 }
 
 // LoginGuardian unset

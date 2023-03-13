@@ -183,8 +183,6 @@ public partial class CAContract
 
         var managerInfoList = holderInfo.ManagerInfos;
 
-        var managerInfosUpdated = new RepeatedField<ManagerInfo>();
-
         foreach (var manager in managerInfosToUpdate)
         {
             var managerToUpdate = managerInfoList.FirstOrDefault(m => m.Address == manager.Address);
@@ -194,23 +192,15 @@ public partial class CAContract
             }
 
             managerToUpdate.ExtraData = manager.ExtraData;
-            managerInfosUpdated.Add(managerToUpdate);
-        }
-
-        if (managerInfosUpdated.Count == 0)
-        {
-            return new Empty();
-        }
-
-        Context.Fire(new ManagerInfosUpdated
-        {
-            CaHash = input.CaHash,
-            CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
-            ManagerInfoList = new ManagerInfoList
+            
+            Context.Fire(new ManagerInfoUpdated
             {
-                ManagerInfos = { managerInfosUpdated }
-            }
-        });
+                CaHash = input.CaHash,
+                CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
+                Manager = managerToUpdate.Address,
+                ExtraData = managerToUpdate.ExtraData
+            });
+        }
 
         return new Empty();
     }
