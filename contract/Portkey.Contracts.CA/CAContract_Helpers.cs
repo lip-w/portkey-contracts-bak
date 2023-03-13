@@ -13,7 +13,7 @@ public partial class CAContract
     {
         //[type,guardianIdentifierHash,verificationTime,verifierAddress,salt]
         var verificationDoc = guardianInfo.VerificationInfo.VerificationDoc;
-        if (verificationDoc == null || string.IsNullOrEmpty(verificationDoc))
+        if (verificationDoc == null || string.IsNullOrWhiteSpace(verificationDoc))
         {
             return false;
         }

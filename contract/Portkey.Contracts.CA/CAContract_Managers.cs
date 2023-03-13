@@ -16,8 +16,7 @@ public partial class CAContract
         Assert(input != null, "invalid input");
         Assert(CheckHashInput(input!.LoginGuardianIdentifierHash), "invalid input login guardian");
         Assert(input.ManagerInfo != null, "invalid input managerInfo");
-        Assert(input.ManagerInfo!.ExtraData != null && !string.IsNullOrEmpty(input.ManagerInfo.ExtraData),
-            "invalid input extraData");
+        Assert(!string.IsNullOrWhiteSpace(input.ManagerInfo!.ExtraData), "invalid input extraData");
         Assert(input.ManagerInfo.Address != null, "invalid input address");
         var loginGuardianIdentifierHash = input.LoginGuardianIdentifierHash;
         var caHash = State.GuardianMap[loginGuardianIdentifierHash];
@@ -210,7 +209,7 @@ public partial class CAContract
         Assert(hash != null, "invalid input CaHash");
         CheckManagerInfoPermission(hash, Context.Sender);
         Assert(managerInfo != null, "invalid input managerInfo");
-        Assert(!string.IsNullOrEmpty(managerInfo!.ExtraData) && managerInfo.Address != null,
+        Assert(!string.IsNullOrWhiteSpace(managerInfo!.ExtraData) && managerInfo.Address != null,
             "invalid input managerInfo");
     }
     
@@ -222,7 +221,7 @@ public partial class CAContract
 
         foreach (var managerInfo in managerInfos!)
         {
-            Assert(!string.IsNullOrEmpty(managerInfo!.ExtraData) && managerInfo.Address != null,
+            Assert(!string.IsNullOrWhiteSpace(managerInfo!.ExtraData) && managerInfo.Address != null,
                 "invalid input managerInfo");
         }
     }
@@ -230,7 +229,7 @@ public partial class CAContract
     public override Empty ManagerForwardCall(ManagerForwardCallInput input)
     {
         Assert(input.CaHash != null, "CA hash is null.");
-        Assert(input.ContractAddress != null && !string.IsNullOrEmpty(input.MethodName),
+        Assert(input.ContractAddress != null && !string.IsNullOrWhiteSpace(input.MethodName),
             "Invalid input.");
         CheckManagerInfoPermission(input.CaHash, Context.Sender);
         Context.SendVirtualInline(input.CaHash, input.ContractAddress, input.MethodName, input.Args);
@@ -241,7 +240,7 @@ public partial class CAContract
     {
         Assert(input.CaHash != null, "CA hash is null.");
         CheckManagerInfoPermission(input.CaHash, Context.Sender);
-        Assert(input.To != null && !string.IsNullOrEmpty(input.Symbol), "Invalid input.");
+        Assert(input.To != null && !string.IsNullOrWhiteSpace(input.Symbol), "Invalid input.");
         Context.SendVirtualInline(input.CaHash, State.TokenContract.Value,
             nameof(State.TokenContract.Transfer),
             new TransferInput
@@ -258,7 +257,7 @@ public partial class CAContract
     {
         Assert(input.CaHash != null, "CA hash is null.");
         CheckManagerInfoPermission(input.CaHash, Context.Sender);
-        Assert(input.From != null && input.To != null && !string.IsNullOrEmpty(input.Symbol),
+        Assert(input.From != null && input.To != null && !string.IsNullOrWhiteSpace(input.Symbol),
             "Invalid input.");
         Context.SendVirtualInline(input.CaHash, State.TokenContract.Value,
             nameof(State.TokenContract.TransferFrom),

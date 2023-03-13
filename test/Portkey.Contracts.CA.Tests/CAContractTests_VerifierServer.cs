@@ -38,7 +38,7 @@ public partial class CAContractTests
     }
 
     [Fact]
-    public async Task AddVerifierServerEndPointsTest_Failed_NotAdmin()
+    public async Task AddVerifierServerEndPointsTest_Fail_NotAdmin()
     {
         await CaContractStub.Initialize.SendAsync(new InitializeInput
         {
