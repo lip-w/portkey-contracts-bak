@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using AElf;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
@@ -332,6 +333,12 @@ public partial class CAContractTests
             VerifierAddressList = { new Address() },
             EndPoints = { "127.0.0.1", "127.0.0.2" }
         });
+        
+        await CaContractStub.RemoveVerifierServer.SendAsync(new RemoveVerifierServerInput
+        {
+            Id = HashHelper.ComputeFrom("test")
+        });
+        
         var verifierServer = await CaContractStub.GetVerifierServers.CallAsync(new Empty());
         var id = verifierServer.VerifierServers[0].Id;
         var input = new RemoveVerifierServerInput
@@ -339,7 +346,7 @@ public partial class CAContractTests
             Id = id
         };
         await CaContractStub.RemoveVerifierServer.SendAsync(input);
-
+        
         var inputWithNameNotExist = new RemoveVerifierServerInput
         {
             Id = Hash.Empty
