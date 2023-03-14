@@ -201,7 +201,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         Assert(input != null && input.DelegationFee != null, "invalid input");
         Assert(input!.DelegationFee!.Amount >= 0, "input can not be less than 0");
 
-        if (State.ContractDelegationFee == null)
+        if (State.ContractDelegationFee.Value == null)
         {
             State.ContractDelegationFee!.Value = new ContractDelegationFee();
         }
