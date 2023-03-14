@@ -88,7 +88,7 @@ public partial class CAContract
         //     "Only Admin has permission to remove VerifierServerEndPoints");
         Assert(State.ServerControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "invalid input");
-        Assert(CheckHashInput(input!.Id), "invalid input id");
+        Assert(IsValidHash(input!.Id), "invalid input id");
         Assert(input.EndPoints != null && input.EndPoints.Count > 0, "invalid input endPoints");
         if (State.VerifiersServerList.Value == null) return new Empty();
 
@@ -130,7 +130,7 @@ public partial class CAContract
         //     "Only Admin has permission to remove VerifierServer");
         Assert(State.ServerControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "invalid input");
-        Assert(CheckHashInput(input!.Id), "invalid input id");
+        Assert(IsValidHash(input!.Id), "invalid input id");
         if (State.VerifiersServerList.Value == null) return new Empty();
 
         var server = State.VerifiersServerList.Value.VerifierServers

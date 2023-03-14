@@ -59,7 +59,7 @@ public partial class CAContract
         return satisfiedGuardians != null;
     }
 
-    private bool CheckHashInput(Hash hash)
+    private bool IsValidHash(Hash hash)
     {
         return hash != null && !hash.Value.IsEmpty;
     }

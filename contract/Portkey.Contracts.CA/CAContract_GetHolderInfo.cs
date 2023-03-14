@@ -7,7 +7,7 @@ public partial class CAContract
         Assert(input != null, "input cannot be null!");
         // CaHash and loginGuardian cannot be invalid at same time.
         Assert(
-            input!.CaHash != null || CheckHashInput(input.LoginGuardianIdentifierHash),
+            input!.CaHash != null || IsValidHash(input.LoginGuardianIdentifierHash),
             $"CaHash is null, or loginGuardianIdentifierHash is empty: {input.CaHash}, {input.LoginGuardianIdentifierHash}");
 
         var output = new GetHolderInfoOutput();

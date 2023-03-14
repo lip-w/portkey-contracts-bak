@@ -134,7 +134,7 @@ public partial class CAContractTests
         var result = await CaContractStub.RemoveVerifierServerEndPoints.SendWithExceptionAsync(
             new RemoveVerifierServerEndPointsInput
             {
-                Id = new Hash()
+                Id = Hash.Empty
             });
         result.TransactionResult.Error.ShouldContain("No permission");
     }
@@ -171,7 +171,7 @@ public partial class CAContractTests
 
         var inputWithNameNotExist = new RemoveVerifierServerEndPointsInput
         {
-            Id = new Hash(),
+            Id = Hash.Empty,
             EndPoints = {"127.0.0.3"}
         };
         await CaContractStub.RemoveVerifierServerEndPoints.SendAsync(inputWithNameNotExist);
@@ -197,7 +197,7 @@ public partial class CAContractTests
 
         var inputWithEndPointsNull = new RemoveVerifierServerEndPointsInput
         {
-            Id = new Hash(),
+            Id = Hash.Empty,
             EndPoints = { }
         };
         var result = await CaContractStub.RemoveVerifierServerEndPoints.SendWithExceptionAsync(inputWithEndPointsNull);
@@ -235,7 +235,7 @@ public partial class CAContractTests
 
         var inputWithNameNotExist = new RemoveVerifierServerInput
         {
-            Id = new Hash()
+            Id = Hash.Empty
         };
         await CaContractStub.RemoveVerifierServer.SendAsync(inputWithNameNotExist);
         var result = CaContractStub.GetVerifierServers.CallAsync(new Empty());
@@ -251,7 +251,7 @@ public partial class CAContractTests
         });
         var result = await CaContractStub.RemoveVerifierServer.SendWithExceptionAsync(new RemoveVerifierServerInput
         {
-            Id = new Hash()
+            Id = Hash.Empty
         });
         result.TransactionResult.Error.ShouldContain("No permission");
     }

@@ -14,7 +14,7 @@ public partial class CAContract
     public override Empty SocialRecovery(SocialRecoveryInput input)
     {
         Assert(input != null, "invalid input");
-        Assert(CheckHashInput(input!.LoginGuardianIdentifierHash), "invalid input login guardian");
+        Assert(IsValidHash(input!.LoginGuardianIdentifierHash), "invalid input login guardian");
         Assert(input.ManagerInfo != null, "invalid input managerInfo");
         Assert(!string.IsNullOrWhiteSpace(input.ManagerInfo!.ExtraData), "invalid input extraData");
         Assert(input.ManagerInfo.Address != null, "invalid input address");
@@ -105,7 +105,7 @@ public partial class CAContract
     public override Empty RemoveManagerInfo(RemoveManagerInfoInput input)
     {
         Assert(input != null, "invalid input");
-        Assert(CheckHashInput(input!.CaHash), "invalid input caHash");
+        Assert(IsValidHash(input!.CaHash), "invalid input caHash");
         CheckManagerInfoPermission(input!.CaHash, Context.Sender);
 
         return RemoveManager(input.CaHash, Context.Sender);
@@ -146,9 +146,7 @@ public partial class CAContract
 
     private Empty RemoveManager(Hash caHash, Address address)
     {
-        var holderInfo = State.HolderInfoMap[caHash];
-        Assert(holderInfo != null, $"Not found holderInfo by caHash: {caHash}");
-        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {caHash}");
+        var holderInfo = GetHolderInfoByCaHash(caHash);
 
         // Manager does not exist
         var managerInfo = FindManagerInfo(holderInfo.ManagerInfos, address);

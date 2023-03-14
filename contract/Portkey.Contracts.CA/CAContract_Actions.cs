@@ -37,7 +37,7 @@ public partial class CAContract : CAContractContainer.CAContractBase
         //Assert(Context.Sender == State.RegisterOrRecoveryController.Value,"No permission.");
         Assert(State.CreatorControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "Invalid input.");
-        Assert(input!.GuardianApproved != null && CheckHashInput(input.GuardianApproved.IdentifierHash),
+        Assert(input!.GuardianApproved != null && IsValidHash(input.GuardianApproved.IdentifierHash),
             "invalid input guardian");
         Assert(
             input.GuardianApproved!.VerificationInfo != null, "invalid verification");

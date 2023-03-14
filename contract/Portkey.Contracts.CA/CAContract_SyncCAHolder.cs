@@ -13,7 +13,7 @@ public partial class CAContract
         ValidateCAHolderInfoWithManagerInfosExistsInput input)
     {
         Assert(input != null, "input is null");
-        Assert(CheckHashInput(input!.CaHash), "input.CaHash is null or empty");
+        Assert(IsValidHash(input!.CaHash), "input.CaHash is null or empty");
         Assert(input.ManagerInfos != null, "input.ManagerInfos is null");
 
         var holderInfo = GetHolderInfoByCaHash(input.CaHash);

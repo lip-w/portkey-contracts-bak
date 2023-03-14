@@ -14,7 +14,7 @@ public partial class CAContract
         Assert(input!.CaHash != null, "CaHash should not be null");
         // Guardian should be valid, not null, and be with non-null Value
         Assert(input.Guardian != null, "Guardian should not be null");
-        Assert(CheckHashInput(input.Guardian!.IdentifierHash), "Guardian IdentifierHash should not be null");
+        Assert(IsValidHash(input.Guardian!.IdentifierHash), "Guardian IdentifierHash should not be null");
         CheckManagerInfoPermission(input.CaHash, Context.Sender);
 
         var holderInfo = GetHolderInfoByCaHash(input.CaHash);
@@ -69,7 +69,7 @@ public partial class CAContract
         Assert(input!.CaHash != null, "CaHash can not be null");
         // Guardian should be valid, not null, and be with non-null Value
         Assert(input.Guardian != null, "Guardian can not be null");
-        Assert(CheckHashInput(input.Guardian!.IdentifierHash), "Guardian IdentifierHash can not be null");
+        Assert(IsValidHash(input.Guardian!.IdentifierHash), "Guardian IdentifierHash can not be null");
         CheckManagerInfoPermission(input.CaHash, Context.Sender);
 
         var holderInfo = GetHolderInfoByCaHash(input.CaHash);
