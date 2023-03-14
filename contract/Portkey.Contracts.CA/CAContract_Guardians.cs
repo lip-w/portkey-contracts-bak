@@ -129,9 +129,9 @@ public partial class CAContract
 
         State.HolderInfoMap[input.CaHash].GuardianList?.Guardians.Remove(toRemoveGuardian);
 
-        if (State.LoginGuardianMap[input.CaHash][toRemoveGuardian.VerifierId] != null)
+        if (State.LoginGuardianMap[toRemoveGuardian.IdentifierHash][toRemoveGuardian.VerifierId] != null)
         {
-            State.LoginGuardianMap[input.CaHash].Remove(toRemoveGuardian.VerifierId);
+            State.LoginGuardianMap[toRemoveGuardian.IdentifierHash].Remove(toRemoveGuardian.VerifierId);
         }
 
         Context.Fire(new GuardianRemoved
