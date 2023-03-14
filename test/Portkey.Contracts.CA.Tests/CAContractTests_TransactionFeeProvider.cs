@@ -41,7 +41,6 @@ public partial class CAContractTests
     [Fact]
     public async Task SetMethodFeeTest_Fail_InvalidToken()
     {
-        await CreateHolder();
         var result = await CaContractStub.SetMethodFee.SendWithExceptionAsync(new MethodFees
         {
             MethodName = "test",

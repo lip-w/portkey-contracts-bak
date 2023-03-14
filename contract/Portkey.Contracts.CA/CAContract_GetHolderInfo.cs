@@ -16,14 +16,12 @@ public partial class CAContract
         Assert(caHash != null,
             $"Not found ca_hash by a the loginGuardianIdentifierHash {input.LoginGuardianIdentifierHash}");
         var holderInfo = State.HolderInfoMap[caHash];
-        Assert(holderInfo != null,
-            $"Holder is not found");
+        Assert(holderInfo != null, $"Holder is not found");
         output.CaHash = caHash;
-        output.ManagerInfos.AddRange(holderInfo?.ManagerInfos.Clone());
+        output.ManagerInfos.AddRange(holderInfo!.ManagerInfos);
 
         output.CaAddress = Context.ConvertVirtualAddressToContractAddress(output.CaHash);
-        output.GuardianList =
-            holderInfo?.GuardianList == null ? new GuardianList() : holderInfo.GuardianList.Clone();
+        output.GuardianList = holderInfo.GuardianList ?? new GuardianList();
 
         return output;
     }
