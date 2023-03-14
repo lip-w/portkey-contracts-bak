@@ -131,7 +131,7 @@ public partial class CAContract
         Assert(State.ServerControllers.Value.Controllers.Contains(Context.Sender), "No permission");
         Assert(input != null, "invalid input");
         Assert(IsValidHash(input!.Id), "invalid input id");
-        if (State.VerifiersServerList.Value == null) return new Empty();
+        if (State.VerifiersServerList.Value == null || State.VerifiersServerList.Value.VerifierServers.Count == 0) return new Empty();
 
         var server = State.VerifiersServerList.Value.VerifierServers
             .FirstOrDefault(server => server.Id == input.Id);
