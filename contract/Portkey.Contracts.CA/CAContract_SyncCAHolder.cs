@@ -110,9 +110,10 @@ public partial class CAContract
             {
                 ManagerInfos = { managerInfosToAdd }
             },
-            ManagerInfosRemoved = new ManagerInfoList
+            // TODO Need change
+            ManagerInfosRemoved = new CAHolderManagerInfoRemovedSynced
             {
-                ManagerInfos = { managerInfosToRemove }
+                ManagerInfosRemoved = { managerInfosToRemove }
             },
             LoginGuardiansAdded = new LoginGuardianList
             {

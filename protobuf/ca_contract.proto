@@ -521,13 +521,17 @@ message CAServerRemoved {
   CAServer ca_server_removed = 1;
 }
 
+message CAHolderManagerInfoRemovedSynced {
+  repeated ManagerInfo manager_infos_removed = 2;
+}
+
 message CAHolderSynced {
   option (aelf.is_event) = true;
   aelf.Address creator = 1 [(aelf.is_indexed) = true];
   aelf.Hash ca_hash = 2 [(aelf.is_indexed) = true];
   aelf.Address ca_address = 3 [(aelf.is_indexed) = true];
   ManagerInfoList manager_infos_added = 4 [(aelf.is_indexed) = true];
-  ManagerInfoList manager_infos_removed = 5 [(aelf.is_indexed) = true];
+  CAHolderManagerInfoRemovedSynced manager_infos_removed = 5 [(aelf.is_indexed) = true];
   LoginGuardianList login_guardians_added = 6 [(aelf.is_indexed) = true];
   LoginGuardianList login_guardians_unbound = 7 [(aelf.is_indexed) = true];
 }
