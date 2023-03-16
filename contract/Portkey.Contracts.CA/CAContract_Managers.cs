@@ -157,6 +157,7 @@ public partial class CAContract
 
         holderInfo.ManagerInfos.Remove(managerInfo);
         RemoveDelegator(caHash, managerInfo);
+        RemoveContractDelegator(managerInfo);
 
         Context.Fire(new ManagerInfoRemoved
         {

@@ -194,6 +194,14 @@ public partial class CAContract : CAContractContainer.CAContractBase
             }
         });
     }
+    
+    private void RemoveContractDelegator(ManagerInfo managerInfo)
+    {
+        State.TokenContract.RemoveTransactionFeeDelegator.Send(new RemoveTransactionFeeDelegatorInput
+        {
+            DelegatorAddress = managerInfo.Address,
+        });
+    }
 
     public override Empty SetContractDelegationFee(SetContractDelegationFeeInput input)
     {

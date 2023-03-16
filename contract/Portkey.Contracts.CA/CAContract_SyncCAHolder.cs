@@ -91,6 +91,7 @@ public partial class CAContract
         foreach (var managerInfo in managerInfosToRemove)
         {
             holderInfo.ManagerInfos.Remove(managerInfo);
+            RemoveContractDelegator(managerInfo);
         }
 
         RemoveDelegators(holderId, managerInfosToRemove);
