@@ -55,7 +55,7 @@ public partial class CAContract
         {
             CaHash = input.CaHash,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
-            LoginGuardian = input.Guardian,
+            LoginGuardian = guardian,
             Manager = Context.Sender
         });
 
@@ -102,7 +102,7 @@ public partial class CAContract
         {
             CaHash = input.CaHash,
             CaAddress = Context.ConvertVirtualAddressToContractAddress(input.CaHash),
-            LoginGuardian = loginGuardian,
+            LoginGuardian = guardian,
             Manager = Context.Sender
         });
 
