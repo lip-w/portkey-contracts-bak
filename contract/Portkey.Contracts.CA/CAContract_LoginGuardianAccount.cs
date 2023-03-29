@@ -79,17 +79,17 @@ public partial class CAContract
             "only one LoginGuardian,can not be Unset");
         var loginGuardian = input.Guardian;
 
-        if (State.LoginGuardianMap[loginGuardian.IdentifierHash][input.Guardian.VerifierId] == null ||
-            State.LoginGuardianMap[loginGuardian.IdentifierHash][input.Guardian.VerifierId] != input.CaHash)
-        {
-            return new Empty();
-        }
+        // if (State.LoginGuardianMap[loginGuardian.IdentifierHash][input.Guardian.VerifierId] == null ||
+        //     State.LoginGuardianMap[loginGuardian.IdentifierHash][input.Guardian.VerifierId] != input.CaHash)
+        // {
+        //     return new Empty();
+        // }
 
         var guardian = holderInfo.GuardianList!.Guardians.FirstOrDefault(t =>
             t.VerifierId == input.Guardian.VerifierId && t.IdentifierHash == input.Guardian.IdentifierHash &&
             t.Type == input.Guardian.Type);
 
-        if (guardian == null)
+        if (guardian == null || !guardian.IsLoginGuardian)
         {
             return new Empty();
         }
