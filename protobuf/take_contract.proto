@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package ca;
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Portkey.Contracts.CA";
+
+service TakeContract{
+
+  option (aelf.csharp_state) = "Portkey.Contracts.Take.TakeContractState";
+
+  rpc Initialize(InitializeInput) returns (google.protobuf.Empty){}
+  
+  rpc Take (TakeInput) returns (google.protobuf.Empty) {
+  }
+}
+
+message InitializeInput {
+  aelf.Address admin = 1;
+  int64 amount_limit = 2;
+  int64 interval_minutes = 3;
+}
+
+message TakeInput {
+  string symbol = 1;
+  int64 amount = 2;
+}
+
+message Taken {
+  option (aelf.is_event) = true;
+  aelf.Address user = 1;
+  string symbol = 2;
+  int64 amount = 3;
+}
