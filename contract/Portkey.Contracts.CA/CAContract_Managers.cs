@@ -23,9 +23,7 @@ public partial class CAContract
 
         Assert(caHash != null, "CA Holder does not exist.");
 
-        var holderInfo = State.HolderInfoMap[caHash];
-        Assert(holderInfo != null, $"Not found holderInfo by caHash: {caHash}");
-        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {caHash}");
+        var holderInfo = GetHolderInfoByCaHash(caHash);
         var guardians = holderInfo.GuardianList!.Guardians;
 
         Assert(input.GuardiansApproved.Count > 0, "invalid input Guardians Approved");

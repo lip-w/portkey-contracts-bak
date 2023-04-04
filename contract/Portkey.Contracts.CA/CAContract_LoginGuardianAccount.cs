@@ -34,7 +34,6 @@ public partial class CAContract
 
         Assert(isOccupied == CAContractConstants.LoginGuardianIsNotOccupied,
             "Internal error, how can it be?");
-        Assert(holderInfo!.GuardianList != null, $"No guardians found in this holder by caHash: {input.CaHash}");
 
         var guardian = holderInfo.GuardianList!.Guardians.FirstOrDefault(t =>
             t.VerifierId == input.Guardian.VerifierId && t.IdentifierHash == input.Guardian.IdentifierHash &&
