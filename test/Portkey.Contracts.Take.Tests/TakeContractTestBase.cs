@@ -6,7 +6,7 @@ namespace Portkey.Contracts.Take.Tests;
 
 public class TakeContractTestBase: DAppContractTestBase<TakeContractTestModule>
 {
-    internal TakeContractContainer.TakeContractStub GetFaucetContractStub(ECKeyPair senderKeyPair)
+    internal TakeContractContainer.TakeContractStub GetTakeContractStub(ECKeyPair senderKeyPair)
     {
         return GetTester<TakeContractContainer.TakeContractStub>(DAppContractAddress, senderKeyPair);
     }
