@@ -10,7 +10,7 @@ public partial class TakeContract : TakeContractContainer.TakeContractBase
     public override Empty Initialize(InitializeInput input)
     {
         Assert(!State.Initialized.Value, "Already initialized.");
-        
+
         var nativeSymbol = Context.Variables.NativeSymbol;
         State.LimitAmountMap[nativeSymbol] = input.AmountLimit == 0 ? DefaultLimitAmount : input.AmountLimit;
         State.IntervalMinutesMap[nativeSymbol] =
@@ -21,14 +21,14 @@ public partial class TakeContract : TakeContractContainer.TakeContractBase
         State.Initialized.Value = true;
         return new Empty();
     }
-    
+
     public override Empty Take(TakeInput input)
     {
         var symbol = ReturnNativeSymbolIfEmpty(input.Symbol);
-        
-        Assert(symbol != Context.Variables.NativeSymbol, "Invalid symbol.");
-        Assert(State.LimitAmountMap[symbol] != input.Amount, $"Cannot take {input.Amount} from {symbol}.");
-        
+
+        Assert(symbol == Context.Variables.NativeSymbol, "Invalid symbol.");
+        Assert(State.LimitAmountMap[symbol] == input.Amount, $"Cannot take {input.Amount} from {symbol}.");
+
         var latestTakeTime = State.LatestTakeTimeMap[symbol][Context.Sender];
         if (latestTakeTime != null)
         {
@@ -36,7 +36,7 @@ public partial class TakeContract : TakeContractContainer.TakeContractBase
             Assert(Context.CurrentBlockTime >= nextAvailableTime,
                 $"Can take {symbol} again after {nextAvailableTime}");
         }
-        
+
         State.TokenContract.Transfer.Send(new TransferInput
         {
             Symbol = symbol,
@@ -52,7 +52,7 @@ public partial class TakeContract : TakeContractContainer.TakeContractBase
             Amount = input.Amount,
             User = Context.Sender
         });
-        
+
         return new Empty();
     }
 
