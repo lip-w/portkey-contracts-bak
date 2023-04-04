@@ -2,7 +2,6 @@ using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using Google.Protobuf.WellKnownTypes;
-using Portkey.Contracts.CA;
 
 namespace Portkey.Contracts.Take;
 
