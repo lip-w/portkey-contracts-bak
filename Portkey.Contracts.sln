@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.CA.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.Take", "contract\Portkey.Contracts.Take\Portkey.Contracts.Take.csproj", "{705B9FFC-9AD9-4E0E-85F9-0A93034A8D4F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.Take.Tests", "test\Portkey.Contracts.Take.Tests\Portkey.Contracts.Take.Tests.csproj", "{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +62,10 @@ Global
 		{705B9FFC-9AD9-4E0E-85F9-0A93034A8D4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{705B9FFC-9AD9-4E0E-85F9-0A93034A8D4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{705B9FFC-9AD9-4E0E-85F9-0A93034A8D4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +78,7 @@ Global
 		{3069D63D-47F8-48FA-B7F8-0FAE4F075A2D} = {5C980166-C987-470D-AEE0-3858A170A903}
 		{F0D4D672-4C9C-4987-AED9-C01966FEEF25} = {DBC47323-E6A2-42A2-A624-CE2EE6139567}
 		{705B9FFC-9AD9-4E0E-85F9-0A93034A8D4F} = {5C980166-C987-470D-AEE0-3858A170A903}
+		{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F} = {DBC47323-E6A2-42A2-A624-CE2EE6139567}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D7426B41-E959-40E4-9ED8-ED8D9C50F133}
