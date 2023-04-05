@@ -3,9 +3,9 @@ using AElf.Sdk.CSharp.State;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
-namespace Portkey.Contracts.Take;
+namespace Portkey.Contracts.TokenClaim;
 
-public class TakeContractState: ContractState
+public class TokenClaimContractState: ContractState
 {
     internal TokenContractContainer.TokenContractReferenceState TokenContract { get; set; }
     

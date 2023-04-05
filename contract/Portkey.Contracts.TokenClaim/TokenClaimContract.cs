@@ -3,9 +3,9 @@ using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using Google.Protobuf.WellKnownTypes;
 
-namespace Portkey.Contracts.Take;
+namespace Portkey.Contracts.TokenClaim;
 
-public partial class TakeContract : TakeContractContainer.TakeContractBase
+public partial class TokenClaimContract : TokenClaimContractContainer.TokenClaimContractBase
 {
     public override Empty Initialize(InitializeInput input)
     {
@@ -22,7 +22,7 @@ public partial class TakeContract : TakeContractContainer.TakeContractBase
         return new Empty();
     }
 
-    public override Empty Take(TakeInput input)
+    public override Empty ClaimToken(ClaimTokenInput input)
     {
         var symbol = ReturnNativeSymbolIfEmpty(input.Symbol);
 
@@ -46,7 +46,7 @@ public partial class TakeContract : TakeContractContainer.TakeContractBase
 
         State.LatestTakeTimeMap[symbol][Context.Sender] = Context.CurrentBlockTime;
 
-        Context.Fire(new Taken
+        Context.Fire(new TokenClaimed
         {
             Symbol = symbol,
             Amount = input.Amount,

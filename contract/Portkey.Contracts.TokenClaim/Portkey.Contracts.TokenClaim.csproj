@@ -2,17 +2,19 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <PackageId>Portkey.Contracts.Take</PackageId>
+        <PackageId>Portkey.Contracts.TokenClaim</PackageId>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Description>Portkey Contracts</Description>
+        <RootNamespace>Portkey.Contracts.TokenClaim</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
         <ContractReference Include="..\..\protobuf\token_contract.proto">
             <Link>Protobuf\Proto\reference\token_contract.proto</Link>
         </ContractReference>
-        <ContractCode Include="..\..\protobuf\take_contract.proto">
-            <Link>Protobuf\Proto\take_contract.proto</Link>
+
+        <ContractCode Include="..\..\protobuf\token_claim_contract.proto">
+            <Link>Protobuf\Proto\token_claim_contract.proto</Link>
         </ContractCode>
     </ItemGroup>
 

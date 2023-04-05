@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <IsPackable>false</IsPackable>
-        <RootNamespace>Portkey.Contracts.Take.Tests</RootNamespace>
+        <RootNamespace>Portkey.Contracts.TokenClaim.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -35,8 +35,9 @@
         <ContractMessage Include="..\..\protobuf\authority_info.proto">
             <Link>Protobuf\Proto\authority_info.proto</Link>
         </ContractMessage>
-        <ContractStub Include="..\..\protobuf\take_contract.proto">
-            <Link>Protobuf\Proto\take_contract.proto</Link>
+
+        <ContractStub Include="..\..\protobuf\token_claim_contract.proto">
+            <Link>Protobuf\Proto\token_claim_contract.proto</Link>
         </ContractStub>
     </ItemGroup>
 
@@ -48,7 +49,7 @@
 
 
     <ItemGroup>
-        <ProjectReference Include="..\..\contract\Portkey.Contracts.Take\Portkey.Contracts.Take.csproj" />
+        <ProjectReference Include="..\..\contract\Portkey.Contracts.TokenClaim\Portkey.Contracts.TokenClaim.csproj" />
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />
     </ItemGroup>
 </Project>

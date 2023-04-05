@@ -5,7 +5,7 @@ using AElf.Kernel.SmartContract.Application;
 using AElf.Types;
 using Volo.Abp.DependencyInjection;
 
-namespace Portkey.Contracts.Take.Tests;
+namespace Portkey.Contracts.TokenClaim.Tests;
 
 public class TakeContractInitializationProvider: IContractInitializationProvider
 {
@@ -15,5 +15,5 @@ public class TakeContractInitializationProvider: IContractInitializationProvider
     }
 
     public Hash SystemSmartContractName => DAppSmartContractAddressNameProvider.Name;
-    public string ContractCodeName => "Portkey.Contracts.Take";
+    public string ContractCodeName => "Portkey.Contracts.TokenClaim";
 }

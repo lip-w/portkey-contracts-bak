@@ -5,16 +5,15 @@ using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
-using Portkey.Contracts.Take.Tests;
 using Shouldly;
 using Xunit;
 
-namespace Portkey.Contracts.Take.Tests;
+namespace Portkey.Contracts.TokenClaim.Tests;
 
 public class TakeContractTests : TakeContractTestBase
 {
-    private TakeContractContainer.TakeContractStub AdminStub { get; set; }
-    private TakeContractContainer.TakeContractStub UserStub { get; set; }
+    private TokenClaimContractContainer.TokenClaimContractStub AdminStub { get; set; }
+    private TokenClaimContractContainer.TokenClaimContractStub UserStub { get; set; }
     private TokenContractContainer.TokenContractStub AdminTokenStub { get; set; }
     private TokenContractContainer.TokenContractStub UserTokenStub { get; set; }
 
@@ -34,7 +33,7 @@ public class TakeContractTests : TakeContractTestBase
         await AdminStub.Initialize.SendAsync(new InitializeInput());
 
         {
-            var executionResult = await UserStub.Take.SendWithExceptionAsync(new TakeInput
+            var executionResult = await UserStub.ClaimToken.SendWithExceptionAsync(new ClaimTokenInput
             {
                 Symbol = "ETH",
                 Amount = 100_00000000
@@ -44,7 +43,7 @@ public class TakeContractTests : TakeContractTestBase
     }
 
     [Fact]
-    public async Task Take_Test()
+    public async Task ClaimToken_Test()
     {
         await AdminStub.Initialize.SendAsync(new InitializeInput());
 
@@ -56,7 +55,7 @@ public class TakeContractTests : TakeContractTestBase
             To = Address.FromBase58("2LUmicHyH4RXrMjG4beDwuDsiWJESyLkgkwPdGTR8kahRzq5XS")
         });
 
-        await UserStub.Take.SendAsync(new TakeInput
+        await UserStub.ClaimToken.SendAsync(new ClaimTokenInput
         {
             Symbol = "ELF",
             Amount = 100_00000000
@@ -71,7 +70,7 @@ public class TakeContractTests : TakeContractTestBase
     }
 
     [Fact]
-    public async Task Take_Over_Amount_Test()
+    public async Task ClaimToken_Over_Amount_Test()
     {
         await AdminStub.Initialize.SendAsync(new InitializeInput());
 
@@ -83,7 +82,7 @@ public class TakeContractTests : TakeContractTestBase
             To = Address.FromBase58("2LUmicHyH4RXrMjG4beDwuDsiWJESyLkgkwPdGTR8kahRzq5XS")
         });
 
-        var executionResult = await UserStub.Take.SendWithExceptionAsync(new TakeInput
+        var executionResult = await UserStub.ClaimToken.SendWithExceptionAsync(new ClaimTokenInput
         {
             Symbol = "ELF",
             Amount = 200_00000000
@@ -93,7 +92,7 @@ public class TakeContractTests : TakeContractTestBase
     }
 
     [Fact]
-    public async Task Take_Twice_Test()
+    public async Task ClaimToken_Twice_Test()
     {
         await AdminStub.Initialize.SendAsync(new InitializeInput());
 
@@ -105,13 +104,13 @@ public class TakeContractTests : TakeContractTestBase
             To = Address.FromBase58("2LUmicHyH4RXrMjG4beDwuDsiWJESyLkgkwPdGTR8kahRzq5XS")
         });
 
-        await UserStub.Take.SendAsync(new TakeInput
+        await UserStub.ClaimToken.SendAsync(new ClaimTokenInput
         {
             Symbol = "ELF",
             Amount = 100_00000000
         });
 
-        var executionResult = await UserStub.Take.SendWithExceptionAsync(new TakeInput
+        var executionResult = await UserStub.ClaimToken.SendWithExceptionAsync(new ClaimTokenInput
         {
             Symbol = "ELF",
             Amount = 100_00000000
@@ -121,11 +120,11 @@ public class TakeContractTests : TakeContractTestBase
     }
 
     [Fact]
-    public async Task Take_Other_Symbol_Test()
+    public async Task ClaimToken_Other_Symbol_Test()
     {
         await AdminStub.Initialize.SendAsync(new InitializeInput());
 
-        var executionResult = await UserStub.Take.SendWithExceptionAsync(new TakeInput
+        var executionResult = await UserStub.ClaimToken.SendWithExceptionAsync(new ClaimTokenInput
         {
             Symbol = "ETH",
             Amount = 100_00000000

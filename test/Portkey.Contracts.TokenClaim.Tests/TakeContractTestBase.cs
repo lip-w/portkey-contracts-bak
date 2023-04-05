@@ -2,13 +2,13 @@ using AElf.Boilerplate.TestBase;
 using AElf.Contracts.MultiToken;
 using AElf.Cryptography.ECDSA;
 
-namespace Portkey.Contracts.Take.Tests;
+namespace Portkey.Contracts.TokenClaim.Tests;
 
 public class TakeContractTestBase: DAppContractTestBase<TakeContractTestModule>
 {
-    internal TakeContractContainer.TakeContractStub GetTakeContractStub(ECKeyPair senderKeyPair)
+    internal TokenClaimContractContainer.TokenClaimContractStub GetTakeContractStub(ECKeyPair senderKeyPair)
     {
-        return GetTester<TakeContractContainer.TakeContractStub>(DAppContractAddress, senderKeyPair);
+        return GetTester<TokenClaimContractContainer.TokenClaimContractStub>(DAppContractAddress, senderKeyPair);
     }
         
     internal TokenContractContainer.TokenContractStub GetTokenContractStub(ECKeyPair senderKeyPair)

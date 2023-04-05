@@ -24,9 +24,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.CA", "con
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.CA.Tests", "test\Portkey.Contracts.CA.Tests\Portkey.Contracts.CA.Tests.csproj", "{F0D4D672-4C9C-4987-AED9-C01966FEEF25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.Take", "contract\Portkey.Contracts.Take\Portkey.Contracts.Take.csproj", "{705B9FFC-9AD9-4E0E-85F9-0A93034A8D4F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.TokenClaim", "contract\Portkey.Contracts.TokenClaim\Portkey.Contracts.TokenClaim.csproj", "{705B9FFC-9AD9-4E0E-85F9-0A93034A8D4F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.Take.Tests", "test\Portkey.Contracts.Take.Tests\Portkey.Contracts.Take.Tests.csproj", "{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portkey.Contracts.TokenClaim.Tests", "test\Portkey.Contracts.TokenClaim.Tests\Portkey.Contracts.TokenClaim.Tests.csproj", "{0EC0BCE0-D01C-40BB-AAD0-06A487D5072F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
