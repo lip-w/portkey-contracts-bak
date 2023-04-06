@@ -35,9 +35,6 @@
     </ItemGroup>
     
     <ItemGroup>
-        <ContractBase Include="..\..\protobuf\acs1.proto">
-            <Link>Protobuf\Proto\reference\acs1.proto</Link>
-        </ContractBase>
         <ContractBase Include="..\..\protobuf\acs12.proto">
             <Link>Protobuf\Proto\reference\acs12.proto</Link>
         </ContractBase>
@@ -47,9 +44,5 @@
         <ContractCode Include="..\..\protobuf\ca_contract.proto">
             <Link>Protobuf\Proto\ca_contract.proto</Link>
         </ContractCode>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="AElf.Contracts.MultiToken" Version="1.2.2" />
     </ItemGroup>
 </Project>
