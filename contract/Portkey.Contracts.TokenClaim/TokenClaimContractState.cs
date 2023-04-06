@@ -17,4 +17,6 @@ public class TokenClaimContractState: ContractState
     /// Symbol -> Take Address -> Latest Take Time.
     /// </summary>
     public MappedState<string, Address, Timestamp> LatestTakeTimeMap { get; set; }
+    
+    public Address Admin { get; set; }
 }
