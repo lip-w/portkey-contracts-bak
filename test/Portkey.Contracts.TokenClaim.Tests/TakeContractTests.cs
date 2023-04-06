@@ -3,8 +3,12 @@ using System.Threading.Tasks;
 using AElf.Contracts.MultiToken;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
+using AElf.CSharp.Core.Extension;
+using AElf.Kernel;
+using AElf.Kernel.Blockchain.Application;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
 
@@ -133,7 +137,7 @@ public class TakeContractTests : TakeContractTestBase
     [Fact]
     public async Task ClaimToken_Twice_Success_Test()
     {
-        await AdminStub.Initialize.SendAsync(new InitializeInput { IntervalMinutes = 1 });
+        await AdminStub.Initialize.SendAsync(new InitializeInput());
 
         await AdminTokenStub.Transfer.SendAsync(new TransferInput
         {
@@ -148,7 +152,7 @@ public class TakeContractTests : TakeContractTestBase
             Symbol = "ELF",
             Amount = 100_00000000
         });
-        
+
         await AdminTokenStub.Transfer.SendAsync(new TransferInput
         {
             Amount = 300_00000000,
@@ -157,8 +161,10 @@ public class TakeContractTests : TakeContractTestBase
             To = Address.FromBase58("2LUmicHyH4RXrMjG4beDwuDsiWJESyLkgkwPdGTR8kahRzq5XS")
         });
 
-        await Task.Delay(66_000);
-        
+        var blockTimeProvider = Application.ServiceProvider.GetRequiredService<IBlockTimeProvider>();
+        await Task.Delay(1000);
+        blockTimeProvider.SetBlockTime(TimestampHelper.GetUtcNow().AddDays(1));
+
         await UserStub.ClaimToken.SendAsync(new ClaimTokenInput
         {
             Symbol = "ELF",
@@ -200,7 +206,7 @@ public class TakeContractTests : TakeContractTestBase
             Symbol = "ELF",
             Amount = 100_00000000
         });
-        
+
         // Check user balance.
         var balance = (await UserTokenStub.GetBalance.CallAsync(new GetBalanceInput
         {
