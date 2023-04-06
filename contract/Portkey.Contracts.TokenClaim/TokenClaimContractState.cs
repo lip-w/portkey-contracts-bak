@@ -18,5 +18,5 @@ public class TokenClaimContractState: ContractState
     /// </summary>
     public MappedState<string, Address, Timestamp> LatestTakeTimeMap { get; set; }
     
-    public Address Admin { get; set; }
+    public SingletonState<Address> Admin { get; set; }
 }

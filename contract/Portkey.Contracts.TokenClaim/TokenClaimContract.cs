@@ -18,7 +18,7 @@ public partial class TokenClaimContract : TokenClaimContractContainer.TokenClaim
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
 
-        State.Admin = Context.Sender;
+        State.Admin.Value = Context.Sender;
 
         State.Initialized.Value = true;
         return new Empty();
