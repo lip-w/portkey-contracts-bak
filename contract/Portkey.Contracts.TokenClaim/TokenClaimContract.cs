@@ -26,8 +26,9 @@ public partial class TokenClaimContract : TokenClaimContractContainer.TokenClaim
 
     public override Empty ClaimToken(ClaimTokenInput input)
     {
+        Assert(State.Initialized.Value, "Uninitialized.");
         var symbol = ReturnNativeSymbolIfEmpty(input.Symbol);
-
+        
         Assert(symbol == Context.Variables.NativeSymbol, "Invalid symbol.");
         Assert(State.LimitAmountMap[symbol] == input.Amount, $"Cannot take {input.Amount} from {symbol}.");
 
@@ -36,7 +37,7 @@ public partial class TokenClaimContract : TokenClaimContractContainer.TokenClaim
         {
             var nextAvailableTime = latestTakeTime.AddMinutes(State.IntervalMinutesMap[symbol]);
             Assert(Context.CurrentBlockTime >= nextAvailableTime,
-                $"Can take {symbol} again after {nextAvailableTime}");
+                $"Can take {symbol} again after {nextAvailableTime},Context.");
         }
 
         State.TokenContract.Transfer.Send(new TransferInput
