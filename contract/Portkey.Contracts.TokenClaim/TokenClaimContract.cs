@@ -1,6 +1,7 @@
 using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
+using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
 namespace Portkey.Contracts.TokenClaim;
@@ -13,13 +14,10 @@ public partial class TokenClaimContract : TokenClaimContractContainer.TokenClaim
 
         var nativeSymbol = Context.Variables.NativeSymbol;
         State.LimitAmountMap[nativeSymbol] = input.AmountLimit == 0 ? DefaultLimitAmount : input.AmountLimit;
-        State.IntervalMinutesMap[nativeSymbol] =
-            input.IntervalMinutes == 0 ? DefaultIntervalMinutes : input.IntervalMinutes;
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
 
         State.Admin.Value = Context.Sender;
-
         State.Initialized.Value = true;
         return new Empty();
     }
@@ -28,26 +26,17 @@ public partial class TokenClaimContract : TokenClaimContractContainer.TokenClaim
     {
         Assert(State.Initialized.Value, "Uninitialized.");
         var symbol = ReturnNativeSymbolIfEmpty(input.Symbol);
-        
+
         Assert(symbol == Context.Variables.NativeSymbol, "Invalid symbol.");
         Assert(State.LimitAmountMap[symbol] == input.Amount, $"Cannot take {input.Amount} from {symbol}.");
-
-        var latestTakeTime = State.LatestTakeTimeMap[symbol][Context.Sender];
-        if (latestTakeTime != null)
-        {
-            var nextAvailableTime = latestTakeTime.AddMinutes(State.IntervalMinutesMap[symbol]);
-            Assert(Context.CurrentBlockTime >= nextAvailableTime,
-                $"Can take {symbol} again after {nextAvailableTime},Context.");
-        }
+        Assert(Context.Sender == Address.FromBase58(ProxyAddress), "Invalid address");
 
         State.TokenContract.Transfer.Send(new TransferInput
         {
             Symbol = symbol,
             Amount = input.Amount,
-            To = Context.Sender
+            To = Address.FromBase58(ProxyAddress)
         });
-
-        State.LatestTakeTimeMap[symbol][Context.Sender] = Context.CurrentBlockTime;
 
         Context.Fire(new TokenClaimed
         {
