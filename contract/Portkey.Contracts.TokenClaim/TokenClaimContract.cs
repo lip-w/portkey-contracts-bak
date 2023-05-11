@@ -29,19 +29,19 @@ public partial class TokenClaimContract : TokenClaimContractContainer.TokenClaim
 
         Assert(symbol == Context.Variables.NativeSymbol, "Invalid symbol.");
         Assert(State.LimitAmountMap[symbol] == input.Amount, $"Cannot take {input.Amount} from {symbol}.");
-        Assert(Context.Sender == Address.FromBase58(ProxyAddress), "Invalid address");
+        Assert(Context.Sender == Address.FromBase58(ProxyAddress), "Invalid address.");
 
         State.TokenContract.Transfer.Send(new TransferInput
         {
             Symbol = symbol,
-            Amount = input.Amount,
+            Amount = DefaultLimitAmount,
             To = Address.FromBase58(ProxyAddress)
         });
 
         Context.Fire(new TokenClaimed
         {
             Symbol = symbol,
-            Amount = input.Amount,
+            Amount = DefaultLimitAmount,
             User = Context.Sender
         });
 
